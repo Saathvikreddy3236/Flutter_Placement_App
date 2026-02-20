@@ -4,6 +4,7 @@ import '../screens/student_applications_screen.dart';
 import '../screens/student_bookmarks_screen.dart';
 import '../screens/student_dashboard_screen.dart';
 import '../screens/student_jobs_screen.dart';
+import '../services/session_store.dart';
 import 'student_navbar.dart';
 
 class StudentSectionShell extends StatelessWidget {
@@ -35,12 +36,15 @@ class StudentSectionShell extends StatelessWidget {
           child: Column(
             children: [
               StudentNavbar(
-                studentName: 'Saathvik',
-                onLogout: () => Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  '/',
-                  (route) => false,
-                ),
+                studentName: SessionStore.studentName,
+                onLogout: () {
+                  SessionStore.clear();
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/',
+                    (route) => false,
+                  );
+                },
                 activeTab: activeTab,
                 onHomeTap: () => Navigator.pushReplacementNamed(
                   context,

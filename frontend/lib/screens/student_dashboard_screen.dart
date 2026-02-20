@@ -1,4 +1,6 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+
+import '../services/session_store.dart';
 import '../widgets/student_navbar.dart';
 import 'student_applications_screen.dart';
 import 'student_bookmarks_screen.dart';
@@ -24,12 +26,15 @@ class StudentDashboardScreen extends StatelessWidget {
           child: Column(
             children: [
               StudentNavbar(
-                studentName: 'Saathvik',
-                onLogout: () => Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  '/',
-                  (route) => false,
-                ),
+                studentName: SessionStore.studentName,
+                onLogout: () {
+                  SessionStore.clear();
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/',
+                    (route) => false,
+                  );
+                },
                 activeTab: null,
                 onHomeTap: () {},
                 onJobsTap: () => Navigator.pushReplacementNamed(
@@ -45,7 +50,9 @@ class StudentDashboardScreen extends StatelessWidget {
                   StudentBookmarksScreen.routeName,
                 ),
               ),
-              const Expanded(child: _DashboardBody()),
+              Expanded(
+                child: _DashboardBody(studentName: SessionStore.studentName),
+              ),
             ],
           ),
         ),
@@ -55,7 +62,9 @@ class StudentDashboardScreen extends StatelessWidget {
 }
 
 class _DashboardBody extends StatelessWidget {
-  const _DashboardBody();
+  const _DashboardBody({required this.studentName});
+
+  final String studentName;
 
   @override
   Widget build(BuildContext context) {
@@ -68,18 +77,22 @@ class _DashboardBody extends StatelessWidget {
           builder: (context, constraints) {
             final bool wide = constraints.maxWidth > 980;
             if (wide) {
-              return const Row(
+              return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(flex: 6, child: _HeroText()),
-                  SizedBox(width: 14),
-                  Expanded(flex: 4, child: _CurrentDrive()),
+                  Expanded(flex: 6, child: _HeroText(studentName: studentName)),
+                  const SizedBox(width: 14),
+                  const Expanded(flex: 4, child: _CurrentDrive()),
                 ],
               );
             }
-            return const Column(
+            return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [_HeroText(), SizedBox(height: 12), _CurrentDrive()],
+              children: [
+                _HeroText(studentName: studentName),
+                const SizedBox(height: 12),
+                const _CurrentDrive(),
+              ],
             );
           },
         ),
@@ -95,8 +108,8 @@ class _DashboardBody extends StatelessWidget {
             final int columns = constraints.maxWidth > 1000
                 ? 4
                 : constraints.maxWidth > 640
-                ? 2
-                : 1;
+                    ? 2
+                    : 1;
             return _Grid(
               columns: columns,
               itemHeight: 170,
@@ -134,7 +147,9 @@ class _DashboardBody extends StatelessWidget {
 }
 
 class _HeroText extends StatelessWidget {
-  const _HeroText();
+  const _HeroText({required this.studentName});
+
+  final String studentName;
 
   @override
   Widget build(BuildContext context) {
@@ -165,7 +180,7 @@ class _HeroText extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Text('Welcome, Dandu! ', style: textTheme.headlineSmall),
+          Text('Welcome, $studentName!', style: textTheme.headlineSmall),
           const SizedBox(height: 6),
           Text(
             'Track applications, prepare for interviews, and discover roles tailored to your journey.',
@@ -392,8 +407,8 @@ class _OverviewCard extends StatelessWidget {
               ],
             )
           else if (showBadge)
-            Row(
-              children: const [
+            const Row(
+              children: [
                 CircleAvatar(
                   radius: 10,
                   backgroundColor: Color(0xFFE9A86E),
