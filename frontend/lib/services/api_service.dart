@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -8,7 +9,11 @@ import '../models/api_models.dart';
 class ApiService {
   const ApiService();
 
+  static const String _apiBaseFromEnv = String.fromEnvironment('API_BASE_URL');
+
   static String get _baseUrl {
+    final String envUrl = _apiBaseFromEnv.trim();
+    if (envUrl.isNotEmpty) return envUrl;
     if (kIsWeb) return 'http://127.0.0.1:8000/api';
     if (defaultTargetPlatform == TargetPlatform.android) {
       return 'http://10.0.2.2:8000/api';
@@ -24,11 +29,24 @@ class ApiService {
     required String username,
     required String password,
   }) async {
-    final response = await http.post(
-      _uri('login/'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'username': username, 'password': password}),
-    );
+    late final http.Response response;
+    try {
+      response = await http
+          .post(
+            _uri('login/'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'username': username, 'password': password}),
+          )
+          .timeout(const Duration(seconds: 15));
+    } on TimeoutException {
+      throw Exception(
+        'Connection timed out. Check API_BASE_URL and ensure backend is reachable from this device.',
+      );
+    } on http.ClientException catch (e) {
+      throw Exception(
+        'Network error: ${e.message}. Check API_BASE_URL and backend server status.',
+      );
+    }
     final Map<String, dynamic> data = _decodeJsonObject(response);
     if (response.statusCode != 200) {
       throw Exception(data['error'] ?? 'Login failed');

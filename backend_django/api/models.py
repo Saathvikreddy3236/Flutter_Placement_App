@@ -22,7 +22,7 @@ class StudentProfile(models.Model):
 class Job(models.Model):
     title = models.CharField(max_length=100)
     company = models.CharField(max_length=100)
-    location = models.CharField(max_length=100, default='TBD')
+    location = models.CharField(max_length=100)
     description = models.TextField()
     package = models.IntegerField(help_text="Package in LPA")
     deadline = models.DateField()
