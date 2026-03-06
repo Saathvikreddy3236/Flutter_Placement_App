@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../services/session_store.dart';
-import '../widgets/student_navbar.dart';
+import '../../services/session_store.dart';
+import '../../widgets/student_navbar.dart';
 import 'student_applications_screen.dart';
 import 'student_bookmarks_screen.dart';
 import 'student_jobs_screen.dart';

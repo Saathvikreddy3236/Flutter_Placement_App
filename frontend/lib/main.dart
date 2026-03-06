@@ -1,12 +1,12 @@
 ﻿import 'package:flutter/material.dart';
 
-import 'screens/admin_dashboard_screen.dart';
+import 'screens/admin/admin_dashboard_screen.dart';
 import 'screens/landing_screen.dart';
 import 'screens/login_screen.dart';
-import 'screens/student_applications_screen.dart';
-import 'screens/student_bookmarks_screen.dart';
-import 'screens/student_dashboard_screen.dart';
-import 'screens/student_jobs_screen.dart';
+import 'screens/student/student_applications_screen.dart';
+import 'screens/student/student_bookmarks_screen.dart';
+import 'screens/student/student_dashboard_screen.dart';
+import 'screens/student/student_jobs_screen.dart';
 import 'theme/app_theme.dart';
 
 void main() {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../widgets/student_navbar.dart';
-import '../widgets/student_section_shell.dart';
+import '../../widgets/student_navbar.dart';
+import '../../widgets/student_section_shell.dart';
 
 class StudentBookmarksScreen extends StatelessWidget {
   const StudentBookmarksScreen({super.key});

@@ -1,10 +1,10 @@
 ﻿import 'package:flutter/material.dart';
 
-import '../models/api_models.dart';
-import '../services/api_service.dart';
-import '../services/session_store.dart';
-import '../widgets/student_navbar.dart';
-import '../widgets/student_section_shell.dart';
+import '../../models/api_models.dart';
+import '../../services/api_service.dart';
+import '../../services/session_store.dart';
+import '../../widgets/student_navbar.dart';
+import '../../widgets/student_section_shell.dart';
 
 class StudentApplicationsScreen extends StatefulWidget {
   const StudentApplicationsScreen({super.key});

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../services/session_store.dart';
+import '../../services/session_store.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});

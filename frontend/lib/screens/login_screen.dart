@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../services/session_store.dart';
-import 'admin_dashboard_screen.dart';
-import 'student_dashboard_screen.dart';
+import 'admin/admin_dashboard_screen.dart';
 import '../services/api_service.dart';
+import 'student/student_dashboard_screen.dart';
 
 enum _LoginRole { student, admin }
 

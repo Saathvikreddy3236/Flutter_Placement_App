@@ -1,9 +1,9 @@
 ﻿import 'package:flutter/material.dart';
 
-import '../models/api_models.dart';
-import '../services/api_service.dart';
-import '../services/session_store.dart';
-import '../widgets/student_navbar.dart';
+import '../../models/api_models.dart';
+import '../../services/api_service.dart';
+import '../../services/session_store.dart';
+import '../../widgets/student_navbar.dart';
 import 'student_applications_screen.dart';
 import 'student_bookmarks_screen.dart';
 import 'student_dashboard_screen.dart';
