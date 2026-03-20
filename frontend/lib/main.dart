@@ -1,6 +1,9 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
+import 'screens/admin/admin_analytics_screen.dart';
+import 'screens/admin/admin_applicants_screen.dart';
 import 'screens/admin/admin_dashboard_screen.dart';
+import 'screens/admin/admin_postings_screen.dart';
 import 'screens/landing_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/student/student_applications_screen.dart';
@@ -32,6 +35,9 @@ class PlacementPortalApp extends StatelessWidget {
             const StudentApplicationsScreen(),
         StudentBookmarksScreen.routeName: (_) => const StudentBookmarksScreen(),
         AdminDashboardScreen.routeName: (_) => const AdminDashboardScreen(),
+        AdminPostingsScreen.routeName: (_) => const AdminPostingsScreen(),
+        AdminApplicantsScreen.routeName: (_) => const AdminApplicantsScreen(),
+        AdminAnalyticsScreen.routeName: (_) => const AdminAnalyticsScreen(),
       },
     );
   }

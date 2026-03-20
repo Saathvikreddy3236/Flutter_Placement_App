@@ -1,26 +1,26 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
-enum StudentNavTab { jobs, applications, bookmarks }
+enum AdminNavTab { dashboard, postings, applicants, analytics }
 
-class StudentNavbar extends StatelessWidget {
-  const StudentNavbar({
+class AdminNavbar extends StatelessWidget {
+  const AdminNavbar({
     super.key,
-    required this.studentName,
+    required this.adminName,
     required this.onLogout,
     required this.activeTab,
-    required this.onHomeTap,
-    required this.onJobsTap,
-    required this.onApplicationsTap,
-    required this.onBookmarksTap,
+    required this.onDashboardTap,
+    required this.onPostingsTap,
+    required this.onApplicantsTap,
+    required this.onAnalyticsTap,
   });
 
-  final String studentName;
+  final String adminName;
   final VoidCallback onLogout;
-  final StudentNavTab? activeTab;
-  final VoidCallback onHomeTap;
-  final VoidCallback onJobsTap;
-  final VoidCallback onApplicationsTap;
-  final VoidCallback onBookmarksTap;
+  final AdminNavTab activeTab;
+  final VoidCallback onDashboardTap;
+  final VoidCallback onPostingsTap;
+  final VoidCallback onApplicantsTap;
+  final VoidCallback onAnalyticsTap;
 
   @override
   Widget build(BuildContext context) {
@@ -36,19 +36,19 @@ class StudentNavbar extends StatelessWidget {
 
           final List<Widget> navChips = [
             _NavChip(
-              label: 'All Jobs',
-              active: activeTab == StudentNavTab.jobs,
-              onTap: onJobsTap,
+              label: 'My Postings',
+              active: activeTab == AdminNavTab.postings,
+              onTap: onPostingsTap,
             ),
             _NavChip(
-              label: 'My Applications',
-              active: activeTab == StudentNavTab.applications,
-              onTap: onApplicationsTap,
+              label: 'View Applicants',
+              active: activeTab == AdminNavTab.applicants,
+              onTap: onApplicantsTap,
             ),
             _NavChip(
-              label: 'My Bookmarks',
-              active: activeTab == StudentNavTab.bookmarks,
-              onTap: onBookmarksTap,
+              label: 'Analytics',
+              active: activeTab == AdminNavTab.analytics,
+              onTap: onAnalyticsTap,
             ),
           ];
 
@@ -56,24 +56,24 @@ class StudentNavbar extends StatelessWidget {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _BrandCard(onTap: onHomeTap),
+                _BrandCard(onTap: onDashboardTap),
                 const SizedBox(height: 10),
                 Wrap(spacing: 8, runSpacing: 8, children: navChips),
                 const SizedBox(height: 10),
-                _ProfileCard(studentName: studentName, onLogout: onLogout),
+                _ProfileCard(adminName: adminName, onLogout: onLogout),
               ],
             );
           }
 
           return Row(
             children: [
-              _BrandCard(onTap: onHomeTap),
+              _BrandCard(onTap: onDashboardTap),
               const SizedBox(width: 14),
               Expanded(
                 child: Wrap(spacing: 8, runSpacing: 8, children: navChips),
               ),
               const SizedBox(width: 12),
-              _ProfileCard(studentName: studentName, onLogout: onLogout),
+              _ProfileCard(adminName: adminName, onLogout: onLogout),
             ],
           );
         },
@@ -163,9 +163,9 @@ class _NavChip extends StatelessWidget {
 }
 
 class _ProfileCard extends StatelessWidget {
-  const _ProfileCard({required this.studentName, required this.onLogout});
+  const _ProfileCard({required this.adminName, required this.onLogout});
 
-  final String studentName;
+  final String adminName;
   final VoidCallback onLogout;
 
   @override
@@ -180,10 +180,14 @@ class _ProfileCard extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.account_circle, color: Color(0xFFC75A00), size: 27),
+          const Icon(
+            Icons.admin_panel_settings,
+            color: Color(0xFFC75A00),
+            size: 27,
+          ),
           const SizedBox(width: 8),
           Text(
-            studentName,
+            adminName,
             style: const TextStyle(
               color: Color(0xFF4B2D18),
               fontWeight: FontWeight.w600,
