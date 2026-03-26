@@ -1,15 +1,47 @@
 import 'package:flutter/material.dart';
 
+import '../../models/api_models.dart';
+import '../../services/api_service.dart';
 import '../../services/session_store.dart';
 import '../../widgets/student_navbar.dart';
+import '../../widgets/profile_dialog.dart';
 import 'student_applications_screen.dart';
 import 'student_bookmarks_screen.dart';
 import 'student_jobs_screen.dart';
 
-class StudentDashboardScreen extends StatelessWidget {
+class StudentDashboardScreen extends StatefulWidget {
   const StudentDashboardScreen({super.key});
 
   static const String routeName = '/student-dashboard';
+
+  @override
+  State<StudentDashboardScreen> createState() => _StudentDashboardScreenState();
+}
+
+class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
+  final ApiService _api = const ApiService();
+  late Future<StudentDashboardData> _dashboardFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _dashboardFuture = _loadDashboard();
+  }
+
+  Future<StudentDashboardData> _loadDashboard() {
+    final int? studentId = SessionStore.studentId;
+    if (studentId == null) {
+      throw Exception('Please login first.');
+    }
+    return _api.fetchStudentDashboard(studentId);
+  }
+
+  Future<void> _refresh() async {
+    setState(() {
+      _dashboardFuture = _loadDashboard();
+    });
+    await _dashboardFuture;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,13 +59,10 @@ class StudentDashboardScreen extends StatelessWidget {
             children: [
               StudentNavbar(
                 studentName: SessionStore.studentName,
+                onProfileTap: () => showProfileDialog(context),
                 onLogout: () {
                   SessionStore.clear();
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/',
-                    (route) => false,
-                  );
+                  Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                 },
                 activeTab: null,
                 onHomeTap: () {},
@@ -51,7 +80,33 @@ class StudentDashboardScreen extends StatelessWidget {
                 ),
               ),
               Expanded(
-                child: _DashboardBody(studentName: SessionStore.studentName),
+                child: FutureBuilder<StudentDashboardData>(
+                  future: _dashboardFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return Padding(
+                        padding: const EdgeInsets.all(18),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Failed to load dashboard: ${snapshot.error}'),
+                            const SizedBox(height: 8),
+                            OutlinedButton(
+                              onPressed: _refresh,
+                              child: const Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    final StudentDashboardData dashboard = snapshot.data!;
+                    return _DashboardBody(data: dashboard);
+                  },
+                ),
               ),
             ],
           ),
@@ -62,9 +117,9 @@ class StudentDashboardScreen extends StatelessWidget {
 }
 
 class _DashboardBody extends StatelessWidget {
-  const _DashboardBody({required this.studentName});
+  const _DashboardBody({required this.data});
 
-  final String studentName;
+  final StudentDashboardData data;
 
   @override
   Widget build(BuildContext context) {
@@ -73,6 +128,10 @@ class _DashboardBody extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(18),
       children: [
+        if (data.acceptedOffer != null) ...[
+          _CongratulationsBanner(application: data.acceptedOffer!),
+          const SizedBox(height: 14),
+        ],
         LayoutBuilder(
           builder: (context, constraints) {
             final bool wide = constraints.maxWidth > 980;
@@ -80,18 +139,18 @@ class _DashboardBody extends StatelessWidget {
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(flex: 6, child: _HeroText(studentName: studentName)),
+                  Expanded(flex: 6, child: _HeroText(data: data)),
                   const SizedBox(width: 14),
-                  const Expanded(flex: 4, child: _CurrentDrive()),
+                  Expanded(flex: 4, child: _ProfileCard(profile: data.profile, stats: data.stats)),
                 ],
               );
             }
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _HeroText(studentName: studentName),
+                _HeroText(data: data),
                 const SizedBox(height: 12),
-                const _CurrentDrive(),
+                _ProfileCard(profile: data.profile, stats: data.stats),
               ],
             );
           },
@@ -99,7 +158,7 @@ class _DashboardBody extends StatelessWidget {
         const SizedBox(height: 18),
         _SectionHeader(
           title: 'Placement Overview',
-          tag: 'This month',
+          tag: 'Live data',
           textTheme: textTheme,
         ),
         const SizedBox(height: 10),
@@ -113,43 +172,65 @@ class _DashboardBody extends StatelessWidget {
             return _Grid(
               columns: columns,
               itemHeight: 170,
-              children: const [
+              children: [
                 _OverviewCard(
                   title: 'Applied Roles',
-                  count: '5',
-                  footnote: '2 new since last week',
+                  count: '${data.stats.appliedRoles}',
+                  footnote: 'Applications submitted so far',
                 ),
                 _OverviewCard(
                   title: 'Bookmarked Roles',
-                  count: '3',
-                  footnote: 'Shortlist to stay focused',
+                  count: '${data.stats.bookmarkedRoles}',
+                  footnote: 'Saved for review',
                 ),
                 _OverviewCard(
                   title: 'Shortlisted',
-                  count: '2',
-                  footnote: 'Interviews scheduled',
-                  showDot: true,
+                  count: '${data.stats.shortlisted}',
+                  footnote: 'Selected applications',
+                  showDot: data.stats.shortlisted > 0,
                 ),
                 _OverviewCard(
-                  title: 'Offers Received',
-                  count: '1',
-                  footnote: 'Congratulations!',
-                  showBadge: true,
+                  title: 'Pending Reviews',
+                  count: '${data.stats.pendingReviews}',
+                  footnote: 'Awaiting recruiter updates',
+                  showBadge: data.stats.pendingReviews > 0,
                 ),
               ],
             );
           },
         ),
         const SizedBox(height: 18),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final bool wide = constraints.maxWidth > 920;
+            if (wide) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: _ActivityPanel(data: data)),
+                  const SizedBox(width: 14),
+                  Expanded(child: _RecommendationPanel(jobs: data.recommendedJobs)),
+                ],
+              );
+            }
+            return Column(
+              children: [
+                _ActivityPanel(data: data),
+                const SizedBox(height: 14),
+                _RecommendationPanel(jobs: data.recommendedJobs),
+              ],
+            );
+          },
+        ),
       ],
     );
   }
 }
 
 class _HeroText extends StatelessWidget {
-  const _HeroText({required this.studentName});
+  const _HeroText({required this.data});
 
-  final String studentName;
+  final StudentDashboardData data;
 
   @override
   Widget build(BuildContext context) {
@@ -180,10 +261,10 @@ class _HeroText extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Text('Welcome, $studentName!', style: textTheme.headlineSmall),
+          Text('Welcome, ${data.profile.fullName.isEmpty ? SessionStore.studentName : data.profile.fullName}!', style: textTheme.headlineSmall),
           const SizedBox(height: 6),
           Text(
-            'Track applications, prepare for interviews, and discover roles tailored to your journey.',
+            'You have ${data.stats.availableJobs} active jobs in the system. Keep your momentum going with saved roles, recent applications, and fresh recommendations.',
             style: textTheme.bodyMedium,
           ),
           const SizedBox(height: 14),
@@ -192,12 +273,18 @@ class _HeroText extends StatelessWidget {
             runSpacing: 10,
             children: [
               FilledButton(
-                onPressed: () {},
+                onPressed: () => Navigator.pushReplacementNamed(
+                  context,
+                  StudentJobsScreen.routeName,
+                ),
                 child: const Text('Explore Opportunities'),
               ),
               OutlinedButton(
-                onPressed: () {},
-                child: const Text('Update Profile'),
+                onPressed: () => Navigator.pushReplacementNamed(
+                  context,
+                  StudentApplicationsScreen.routeName,
+                ),
+                child: const Text('View Applications'),
               ),
             ],
           ),
@@ -207,8 +294,57 @@ class _HeroText extends StatelessWidget {
   }
 }
 
-class _CurrentDrive extends StatelessWidget {
-  const _CurrentDrive();
+class _CongratulationsBanner extends StatelessWidget {
+  const _CongratulationsBanner({required this.application});
+
+  final ApplicationItem application;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFC75A00), Color(0xFFE79A45)],
+        ),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Congratulations!',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'You have accepted the offer for ${application.jobTitle} at ${application.company}.',
+            style: const TextStyle(
+              color: Color(0xFFFFF2E6),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Your placement is confirmed and other applications are now closed.',
+            style: TextStyle(color: Color(0xFFFFF2E6)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileCard extends StatelessWidget {
+  const _ProfileCard({required this.profile, required this.stats});
+
+  final StudentProfileItem profile;
+  final DashboardStats stats;
 
   @override
   Widget build(BuildContext context) {
@@ -225,50 +361,213 @@ class _CurrentDrive extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                height: 10,
-                width: 10,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF7DFFAE),
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'LIVE DRIVE',
-                style: textTheme.labelLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
           Text(
-            'Placement Drive 2025 - 26',
+            'Profile Snapshot',
             style: textTheme.titleLarge?.copyWith(color: Colors.white),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Unlock your potential with our latest placement drive.',
-            style: textTheme.bodyMedium?.copyWith(
-              color: const Color(0xFFFFEEDA),
-            ),
-          ),
           const SizedBox(height: 10),
+          Text(
+            '${profile.branch} | Year ${profile.year}',
+            style: textTheme.bodyMedium?.copyWith(color: const Color(0xFFFFEEDA)),
+          ),
+          const SizedBox(height: 8),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: const [
-              _MetaPill('30+ companies'),
-              _MetaPill('Hybrid interviews'),
-              _MetaPill('Starts this week'),
+            children: [
+              _MetaPill('CGPA ${profile.cgpa.toStringAsFixed(1)}'),
+              _MetaPill('Grad ${profile.graduationYear}'),
+              _MetaPill('${stats.availableJobs} open roles'),
             ],
+          ),
+          const SizedBox(height: 14),
+          _ProfileLine(label: 'Email', value: profile.email.isEmpty ? 'Not added' : profile.email),
+          const SizedBox(height: 8),
+          _ProfileLine(label: 'Phone', value: profile.phone.isEmpty ? 'Not added' : profile.phone),
+          const SizedBox(height: 8),
+          _ProfileLine(label: 'Username', value: profile.username),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileLine extends StatelessWidget {
+  const _ProfileLine({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      '$label: $value',
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+    );
+  }
+}
+
+class _ActivityPanel extends StatelessWidget {
+  const _ActivityPanel({required this.data});
+
+  final StudentDashboardData data;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Panel(
+      title: 'Recent Activity',
+      child: Column(
+        children: [
+          if (data.recentApplications.isEmpty)
+            const _EmptyNote('No applications yet. Start exploring jobs to build your pipeline.')
+          else
+            for (final ApplicationItem application in data.recentApplications) ...[
+              _ListTileCard(
+                icon: Icons.description_outlined,
+                title: '${application.company} - ${application.jobTitle}',
+                subtitle: '${application.status} | ${application.location}',
+              ),
+              const SizedBox(height: 10),
+            ],
+          if (data.recentBookmarks.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Saved jobs',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            const SizedBox(height: 10),
+            for (final BookmarkItem bookmark in data.recentBookmarks) ...[
+              _ListTileCard(
+                icon: Icons.bookmark_border,
+                title: '${bookmark.company} - ${bookmark.jobTitle}',
+                subtitle: '${bookmark.location} | ${bookmark.packageLpa} LPA',
+              ),
+              const SizedBox(height: 10),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _RecommendationPanel extends StatelessWidget {
+  const _RecommendationPanel({required this.jobs});
+
+  final List<JobItem> jobs;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Panel(
+      title: 'Recommended Jobs',
+      child: jobs.isEmpty
+          ? const _EmptyNote('No fresh recommendations right now. Check back after new job postings arrive.')
+          : Column(
+              children: [
+                for (final JobItem job in jobs) ...[
+                  _ListTileCard(
+                    icon: Icons.work_outline,
+                    title: '${job.company} - ${job.title}',
+                    subtitle: '${job.location} | ${job.packageLpa} LPA',
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              ],
+            ),
+    );
+  }
+}
+
+class _Panel extends StatelessWidget {
+  const _Panel({required this.title, required this.child});
+
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFFFE1CA)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _ListTileCard extends StatelessWidget {
+  const _ListTileCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFAF5),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFFFE8D7)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: const Color(0xFFC75A00)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 4),
+                Text(subtitle),
+              ],
+            ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _EmptyNote extends StatelessWidget {
+  const _EmptyNote(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFAF5),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFFFE8D7)),
+      ),
+      child: Text(text),
     );
   }
 }
@@ -403,7 +702,7 @@ class _OverviewCard extends StatelessWidget {
               children: [
                 CircleAvatar(radius: 4, backgroundColor: Color(0xFFC75A00)),
                 SizedBox(width: 6),
-                Text('Interviews scheduled'),
+                Text('Shortlist active'),
               ],
             )
           else if (showBadge)
@@ -418,7 +717,7 @@ class _OverviewCard extends StatelessWidget {
                   ),
                 ),
                 SizedBox(width: 6),
-                Text('Congratulations!'),
+                Text('In progress'),
               ],
             )
           else

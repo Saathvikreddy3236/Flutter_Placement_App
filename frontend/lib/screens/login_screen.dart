@@ -61,6 +61,8 @@ class _LoginScreenState extends State<LoginScreen> {
         id: response.studentId,
         name: response.fullName,
         role: response.role,
+        usernameValue: response.username,
+        emailValue: response.email,
       );
       if (!mounted) return;
       if (response.role == 'admin') {

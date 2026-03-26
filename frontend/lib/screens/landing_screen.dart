@@ -1,5 +1,7 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
+import '../models/api_models.dart';
+import '../services/api_service.dart';
 import '../widgets/landing_footer.dart';
 import '../widgets/landing_navbar.dart';
 import 'login_screen.dart';
@@ -18,6 +20,8 @@ class _LandingScreenState extends State<LandingScreen> {
   final GlobalKey _statsKey = GlobalKey();
   final GlobalKey _recruitmentKey = GlobalKey();
   final GlobalKey _contactKey = GlobalKey();
+  final ApiService _api = const ApiService();
+  late Future<LandingSummaryData> _landingFuture = _api.fetchLandingSummary();
 
   @override
   void dispose() {
@@ -62,147 +66,192 @@ class _LandingScreenState extends State<LandingScreen> {
                 onLoginTap: _goToLogin,
               ),
               Expanded(
-                child: SingleChildScrollView(
-                  controller: _scrollController,
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1160),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 18,
+                child: FutureBuilder<LandingSummaryData>(
+                  future: _landingFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('Failed to load landing page: ${snapshot.error}'),
+                              const SizedBox(height: 12),
+                              FilledButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _landingFuture = _api.fetchLandingSummary();
+                                  });
+                                },
+                                child: const Text('Retry'),
+                              ),
+                            ],
+                          ),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _HeroSection(
-                              onLoginTap: _goToLogin,
-                              onViewOutcomesTap: () => _scrollToKey(_statsKey),
-                            ),
-                            const SizedBox(height: 28),
-                            Container(
-                              key: _statsKey,
-                              child: _Section(
-                                title: 'Placement outcomes at a glance',
-                                subtitle:
-                                    'A snapshot of the previous academic year to keep the mission transparent and inspiring.',
-                                child: LayoutBuilder(
-                                  builder: (context, constraints) {
-                                    final int columns =
-                                        constraints.maxWidth > 980
-                                        ? 5
-                                        : constraints.maxWidth > 640
-                                        ? 3
-                                        : 2;
+                      );
+                    }
 
-                                    return _ResponsiveGrid(
-                                      columns: columns,
-                                      itemHeight: 148,
-                                      children: const [
-                                        _StatCard(
-                                          value: '820+',
-                                          label: 'Students placed',
-                                        ),
-                                        _StatCard(
-                                          value: '92%',
-                                          label: 'Placement rate',
-                                        ),
-                                        _StatCard(
-                                          value: 'INR 45 LPA',
-                                          label: 'Highest package',
-                                        ),
-                                        _StatCard(
-                                          value: 'INR 7.5 LPA',
-                                          label: 'Average package',
-                                        ),
-                                        _StatCard(
-                                          value: '150+',
-                                          label: 'Companies visited',
-                                        ),
-                                      ],
-                                    );
-                                  },
+                    final LandingSummaryData data = snapshot.data!;
+                    return SingleChildScrollView(
+                      controller: _scrollController,
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1160),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 18,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _HeroSection(
+                                  data: data,
+                                  onLoginTap: _goToLogin,
+                                  onViewOutcomesTap: () => _scrollToKey(_statsKey),
                                 ),
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            Container(
-                              key: _recruitmentKey,
-                              child: _Section(
-                                title: 'Recruitment process',
-                                subtitle:
-                                    'A structured journey that keeps students, recruiters, and the placement cell aligned.',
-                                child: LayoutBuilder(
-                                  builder: (context, constraints) {
-                                    final int columns =
-                                        constraints.maxWidth > 980
-                                        ? 3
-                                        : constraints.maxWidth > 650
-                                        ? 2
-                                        : 1;
-                                    return _ResponsiveGrid(
-                                      columns: columns,
-                                      itemHeight: 210,
-                                      children: const [
-                                        _StepCard(
-                                          index: 1,
-                                          title: 'Company registration',
-                                          body:
-                                              'Recruiters submit details for placement cell verification.',
-                                        ),
-                                        _StepCard(
-                                          index: 2,
-                                          title: 'Role publishing',
-                                          body:
-                                              'Job roles, criteria, and timelines go live on the portal.',
-                                        ),
-                                        _StepCard(
-                                          index: 3,
-                                          title: 'Student applications',
-                                          body:
-                                              'Eligible students apply and track progress instantly.',
-                                        ),
-                                        _StepCard(
-                                          index: 4,
-                                          title: 'Shortlisting',
-                                          body:
-                                              'Recruiters review profiles and shortlist candidates.',
-                                        ),
-                                        _StepCard(
-                                          index: 5,
-                                          title: 'Interviews & tests',
-                                          body:
-                                              'Technical rounds and HR discussions happen on schedule.',
-                                        ),
-                                        _StepCard(
-                                          index: 6,
-                                          title: 'Offer decisions',
-                                          body:
-                                              'Offers are released through the portal for acceptance.',
-                                        ),
-                                      ],
-                                    );
-                                  },
+                                const SizedBox(height: 28),
+                                Container(
+                                  key: _statsKey,
+                                  child: _Section(
+                                    title: 'Placement outcomes at a glance',
+                                    subtitle:
+                                        'Live metrics from the backend so the placement story stays current and transparent.',
+                                    child: LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        final int columns = constraints.maxWidth > 980
+                                            ? 5
+                                            : constraints.maxWidth > 640
+                                                ? 3
+                                                : 2;
+
+                                        return _ResponsiveGrid(
+                                          columns: columns,
+                                          itemHeight: 148,
+                                          children: [
+                                            _StatCard(
+                                              value: '${data.outcomes.studentsPlaced}+',
+                                              label: 'Students placed',
+                                            ),
+                                            _StatCard(
+                                              value: '${data.outcomes.placementRate}%',
+                                              label: 'Placement rate',
+                                            ),
+                                            _StatCard(
+                                              value: 'INR ${data.outcomes.highestPackageLpa} LPA',
+                                              label: 'Highest package',
+                                            ),
+                                            _StatCard(
+                                              value: 'INR ${data.outcomes.averagePackageLpa.toStringAsFixed(1)} LPA',
+                                              label: 'Average package',
+                                            ),
+                                            _StatCard(
+                                              value: '${data.outcomes.companiesVisited}+',
+                                              label: 'Companies visited',
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(height: 24),
+                                _Section(
+                                  title: 'Featured recruiters',
+                                  subtitle:
+                                      'Companies currently visible in the portal based on the jobs already posted in the backend.',
+                                  child: Wrap(
+                                    spacing: 12,
+                                    runSpacing: 12,
+                                    children: data.featuredCompanies
+                                        .map(
+                                          (company) => _FeaturedCompanyCard(company: company),
+                                        )
+                                        .toList(growable: false),
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                Container(
+                                  key: _recruitmentKey,
+                                  child: _Section(
+                                    title: 'Recruitment process',
+                                    subtitle:
+                                        'A structured journey that keeps students, recruiters, and the placement cell aligned.',
+                                    child: LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        final int columns = constraints.maxWidth > 980
+                                            ? 3
+                                            : constraints.maxWidth > 650
+                                                ? 2
+                                                : 1;
+                                        return _ResponsiveGrid(
+                                          columns: columns,
+                                          itemHeight: 210,
+                                          children: const [
+                                            _StepCard(
+                                              index: 1,
+                                              title: 'Company registration',
+                                              body:
+                                                  'Recruiters submit details for placement cell verification.',
+                                            ),
+                                            _StepCard(
+                                              index: 2,
+                                              title: 'Role publishing',
+                                              body:
+                                                  'Job roles, criteria, and timelines go live on the portal.',
+                                            ),
+                                            _StepCard(
+                                              index: 3,
+                                              title: 'Student applications',
+                                              body:
+                                                  'Eligible students apply and track progress instantly.',
+                                            ),
+                                            _StepCard(
+                                              index: 4,
+                                              title: 'Shortlisting',
+                                              body:
+                                                  'Recruiters review profiles and shortlist candidates.',
+                                            ),
+                                            _StepCard(
+                                              index: 5,
+                                              title: 'Interviews & tests',
+                                              body:
+                                                  'Technical rounds and HR discussions happen on schedule.',
+                                            ),
+                                            _StepCard(
+                                              index: 6,
+                                              title: 'Offer decisions',
+                                              body:
+                                                  'Offers are released through the portal for acceptance.',
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                const SizedBox(height: 26),
+                                Container(
+                                  key: _contactKey,
+                                  child: LandingFooter(
+                                    onOutcomesTap: () => _scrollToKey(_statsKey),
+                                    onProcessTap: () => _scrollToKey(_recruitmentKey),
+                                    onContactTap: () => _scrollToKey(_contactKey),
+                                    onStudentLoginTap: _goToLogin,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 24),
-                            const SizedBox(height: 26),
-                            Container(
-                              key: _contactKey,
-                              child: LandingFooter(
-                                onOutcomesTap: () => _scrollToKey(_statsKey),
-                                onProcessTap: () =>
-                                    _scrollToKey(_recruitmentKey),
-                                onContactTap: () => _scrollToKey(_contactKey),
-                                onStudentLoginTap: _goToLogin,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -215,10 +264,12 @@ class _LandingScreenState extends State<LandingScreen> {
 
 class _HeroSection extends StatelessWidget {
   const _HeroSection({
+    required this.data,
     required this.onLoginTap,
     required this.onViewOutcomesTap,
   });
 
+  final LandingSummaryData data;
   final VoidCallback onLoginTap;
   final VoidCallback onViewOutcomesTap;
 
@@ -234,23 +285,25 @@ class _HeroSection extends StatelessWidget {
                   Expanded(
                     flex: 6,
                     child: _HeroText(
+                      outcomes: data.outcomes,
                       onLoginTap: onLoginTap,
                       onViewOutcomesTap: onViewOutcomesTap,
                     ),
                   ),
                   const SizedBox(width: 20),
-                  const Expanded(flex: 4, child: _HeroCard()),
+                  Expanded(flex: 4, child: _HeroCard(hero: data.hero)),
                 ],
               )
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _HeroText(
+                    outcomes: data.outcomes,
                     onLoginTap: onLoginTap,
                     onViewOutcomesTap: onViewOutcomesTap,
                   ),
                   const SizedBox(height: 14),
-                  const _HeroCard(),
+                  _HeroCard(hero: data.hero),
                 ],
               );
       },
@@ -259,8 +312,13 @@ class _HeroSection extends StatelessWidget {
 }
 
 class _HeroText extends StatelessWidget {
-  const _HeroText({required this.onLoginTap, required this.onViewOutcomesTap});
+  const _HeroText({
+    required this.outcomes,
+    required this.onLoginTap,
+    required this.onViewOutcomesTap,
+  });
 
+  final LandingOutcomeStats outcomes;
   final VoidCallback onLoginTap;
   final VoidCallback onViewOutcomesTap;
 
@@ -325,10 +383,10 @@ class _HeroText extends StatelessWidget {
           Wrap(
             spacing: 14,
             runSpacing: 8,
-            children: const [
-              _MetaTag(text: '150+ recruiters'),
-              _MetaTag(text: '92% placements'),
-              _MetaTag(text: 'Career support year-round'),
+            children: [
+              _MetaTag(text: '${outcomes.companiesVisited}+ recruiters'),
+              _MetaTag(text: '${outcomes.placementRate}% placements'),
+              const _MetaTag(text: 'Career support year-round'),
             ],
           ),
         ],
@@ -338,7 +396,9 @@ class _HeroText extends StatelessWidget {
 }
 
 class _HeroCard extends StatelessWidget {
-  const _HeroCard();
+  const _HeroCard({required this.hero});
+
+  final LandingHeroStats hero;
 
   @override
   Widget build(BuildContext context) {
@@ -388,14 +448,14 @@ class _HeroCard extends StatelessWidget {
             style: textTheme.bodyMedium?.copyWith(color: Colors.white),
           ),
           const SizedBox(height: 14),
-          const _ResponsiveGrid(
+          _ResponsiveGrid(
             columns: 2,
             itemHeight: 88,
             children: [
-              _HeroMetric(value: '30+', label: 'Upcoming drives'),
-              _HeroMetric(value: '110', label: 'Active roles'),
-              _HeroMetric(value: '24', label: 'Interview slots'),
-              _HeroMetric(value: '8', label: 'Offer calls'),
+              _HeroMetric(value: '${hero.upcomingDrives}+', label: 'Upcoming drives'),
+              _HeroMetric(value: '${hero.activeRoles}', label: 'Active roles'),
+              _HeroMetric(value: '${hero.interviewSlots}', label: 'Interview slots'),
+              _HeroMetric(value: '${hero.offerCalls}', label: 'Offer calls'),
             ],
           ),
         ],
@@ -434,6 +494,32 @@ class _HeroMetric extends StatelessWidget {
             label,
             style: textTheme.bodySmall?.copyWith(color: Colors.white),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FeaturedCompanyCard extends StatelessWidget {
+  const _FeaturedCompanyCard({required this.company});
+
+  final LandingCompanyItem company;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 240,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF3E8),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(company.company, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 6),
+          Text('${company.jobCount} live role(s) in the portal'),
         ],
       ),
     );
@@ -589,9 +675,9 @@ class _StepCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             title,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
           ),
           const SizedBox(height: 8),
           Text(body),

@@ -6,6 +6,7 @@ class StudentNavbar extends StatelessWidget {
   const StudentNavbar({
     super.key,
     required this.studentName,
+    required this.onProfileTap,
     required this.onLogout,
     required this.activeTab,
     required this.onHomeTap,
@@ -15,6 +16,7 @@ class StudentNavbar extends StatelessWidget {
   });
 
   final String studentName;
+  final VoidCallback onProfileTap;
   final VoidCallback onLogout;
   final StudentNavTab? activeTab;
   final VoidCallback onHomeTap;
@@ -60,7 +62,11 @@ class StudentNavbar extends StatelessWidget {
                 const SizedBox(height: 10),
                 Wrap(spacing: 8, runSpacing: 8, children: navChips),
                 const SizedBox(height: 10),
-                _ProfileCard(studentName: studentName, onLogout: onLogout),
+                _ProfileCard(
+                  studentName: studentName,
+                  onProfileTap: onProfileTap,
+                  onLogout: onLogout,
+                ),
               ],
             );
           }
@@ -73,7 +79,11 @@ class StudentNavbar extends StatelessWidget {
                 child: Wrap(spacing: 8, runSpacing: 8, children: navChips),
               ),
               const SizedBox(width: 12),
-              _ProfileCard(studentName: studentName, onLogout: onLogout),
+              _ProfileCard(
+                studentName: studentName,
+                onProfileTap: onProfileTap,
+                onLogout: onLogout,
+              ),
             ],
           );
         },
@@ -163,9 +173,14 @@ class _NavChip extends StatelessWidget {
 }
 
 class _ProfileCard extends StatelessWidget {
-  const _ProfileCard({required this.studentName, required this.onLogout});
+  const _ProfileCard({
+    required this.studentName,
+    required this.onProfileTap,
+    required this.onLogout,
+  });
 
   final String studentName;
+  final VoidCallback onProfileTap;
   final VoidCallback onLogout;
 
   @override
@@ -180,13 +195,26 @@ class _ProfileCard extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.account_circle, color: Color(0xFFC75A00), size: 27),
-          const SizedBox(width: 8),
-          Text(
-            studentName,
-            style: const TextStyle(
-              color: Color(0xFF4B2D18),
-              fontWeight: FontWeight.w600,
+          InkWell(
+            onTap: onProfileTap,
+            borderRadius: BorderRadius.circular(10),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.account_circle,
+                  color: Color(0xFFC75A00),
+                  size: 27,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  studentName,
+                  style: const TextStyle(
+                    color: Color(0xFF4B2D18),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(width: 8),

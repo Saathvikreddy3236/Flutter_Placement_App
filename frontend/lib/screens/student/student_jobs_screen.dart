@@ -1,12 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../../models/api_models.dart';
 import '../../services/api_service.dart';
 import '../../services/session_store.dart';
 import '../../widgets/student_navbar.dart';
-import 'student_applications_screen.dart';
-import 'student_bookmarks_screen.dart';
-import 'student_dashboard_screen.dart';
+import '../../widgets/student_section_shell.dart';
 
 class StudentJobsScreen extends StatefulWidget {
   const StudentJobsScreen({super.key});
@@ -20,43 +18,105 @@ class StudentJobsScreen extends StatefulWidget {
 class _StudentJobsScreenState extends State<StudentJobsScreen> {
   final ApiService _api = const ApiService();
   late Future<List<JobItem>> _jobsFuture;
-  bool _submitting = false;
+  final Set<int> _busyApplyJobs = <int>{};
+  final Set<int> _busyBookmarkJobs = <int>{};
+  List<JobItem> _jobs = const <JobItem>[];
+  bool _hasAcceptedOffer = false;
 
   @override
   void initState() {
     super.initState();
-    _jobsFuture = _api.fetchJobs();
+    _jobsFuture = _loadJobs();
+  }
+
+  Future<List<JobItem>> _loadJobs() async {
+    final int? studentId = SessionStore.studentId;
+    final List<JobItem> jobs = studentId == null
+        ? await _api.fetchJobs()
+        : await _api.fetchJobsForStudent(studentId);
+
+    if (studentId != null) {
+      final List<ApplicationItem> applications = await _api.fetchMyApplications(
+        studentId,
+      );
+      _hasAcceptedOffer = applications.any(
+        (application) => application.status == 'Accepted',
+      );
+    } else {
+      _hasAcceptedOffer = false;
+    }
+
+    _jobs = jobs;
+    return jobs;
   }
 
   Future<void> _refresh() async {
     setState(() {
-      _jobsFuture = _api.fetchJobs();
+      _jobsFuture = _loadJobs();
     });
     await _jobsFuture;
   }
 
   Future<void> _apply(JobItem job) async {
     final int? studentId = SessionStore.studentId;
-    if (studentId == null) {
-      _showMessage('Please login again.');
+    if (studentId == null ||
+        _busyApplyJobs.contains(job.id) ||
+        job.isApplied ||
+        _hasAcceptedOffer) {
       return;
     }
-    if (_submitting) return;
 
-    setState(() => _submitting = true);
+    setState(() => _busyApplyJobs.add(job.id));
     try {
       final String message = await _api.applyJob(
         studentId: studentId,
         jobId: job.id,
       );
+      _replaceJob(job.copyWith(isApplied: true));
       _showMessage(message);
+    } catch (e) {
+      final String message = e.toString().replaceFirst('Exception: ', '');
+      if (message == 'Already applied') {
+        _replaceJob(job.copyWith(isApplied: true));
+      }
+      _showMessage(message);
+    } finally {
+      if (mounted) {
+        setState(() => _busyApplyJobs.remove(job.id));
+      }
+    }
+  }
+
+  Future<void> _toggleBookmark(JobItem job) async {
+    final int? studentId = SessionStore.studentId;
+    if (studentId == null || _busyBookmarkJobs.contains(job.id)) {
+      return;
+    }
+
+    setState(() => _busyBookmarkJobs.add(job.id));
+    try {
+      final bool bookmarked = await _api.toggleBookmark(
+        studentId: studentId,
+        jobId: job.id,
+      );
+      _replaceJob(job.copyWith(isBookmarked: bookmarked));
+      _showMessage(bookmarked ? 'Job bookmarked' : 'Bookmark removed');
     } catch (e) {
       _showMessage(e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) {
-        setState(() => _submitting = false);
+        setState(() => _busyBookmarkJobs.remove(job.id));
       }
     }
+  }
+
+  void _replaceJob(JobItem updatedJob) {
+    if (!mounted) return;
+    setState(() {
+      _jobs = _jobs
+          .map((job) => job.id == updatedJob.id ? updatedJob : job)
+          .toList(growable: false);
+    });
   }
 
   void _showMessage(String message) {
@@ -71,11 +131,13 @@ class _StudentJobsScreenState extends State<StudentJobsScreen> {
     return StudentSectionShell(
       activeTab: StudentNavTab.jobs,
       title: 'All Jobs',
-      subtitle: 'Discover roles tailored to your profile.',
+      subtitle:
+          'Discover roles tailored to your profile and save the ones you want to revisit.',
       child: FutureBuilder<List<JobItem>>(
         future: _jobsFuture,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              _jobs.isEmpty) {
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(12),
@@ -83,7 +145,7 @@ class _StudentJobsScreenState extends State<StudentJobsScreen> {
               ),
             );
           }
-          if (snapshot.hasError) {
+          if (snapshot.hasError && _jobs.isEmpty) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -94,26 +156,38 @@ class _StudentJobsScreenState extends State<StudentJobsScreen> {
             );
           }
 
-          final List<JobItem> jobs = snapshot.data ?? const [];
-          if (jobs.isEmpty) {
+          if (_jobs.isEmpty) {
             return const Text('No jobs available right now.');
           }
 
           return Column(
-            children: jobs
-                .map(
-                  (job) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: StudentInfoCard(
-                      title: '${job.title} - ${job.company}',
-                      detail:
-                          '${job.location} | CTC: ${job.packageLpa} LPA | Deadline: ${job.deadline}',
-                      actionLabel: 'Apply',
-                      onActionTap: _submitting ? null : () => _apply(job),
-                    ),
+            children: [
+              if (_hasAcceptedOffer)
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF4E7),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFFFD9BA)),
                   ),
-                )
-                .toList(growable: false),
+                  child: const Text(
+                    'You have accepted an offer, so new applications are now disabled.',
+                  ),
+                ),
+              for (final JobItem job in _jobs) ...[
+                _JobCard(
+                  job: job,
+                  isApplying: _busyApplyJobs.contains(job.id),
+                  isBookmarkUpdating: _busyBookmarkJobs.contains(job.id),
+                  applicationsLocked: _hasAcceptedOffer,
+                  onApply: () => _apply(job),
+                  onToggleBookmark: () => _toggleBookmark(job),
+                ),
+                const SizedBox(height: 10),
+              ],
+            ],
           );
         },
       ),
@@ -121,140 +195,136 @@ class _StudentJobsScreenState extends State<StudentJobsScreen> {
   }
 }
 
-class StudentSectionShell extends StatelessWidget {
-  const StudentSectionShell({
-    super.key,
-    required this.activeTab,
-    required this.title,
-    required this.subtitle,
-    required this.child,
+class _JobCard extends StatelessWidget {
+  const _JobCard({
+    required this.job,
+    required this.isApplying,
+    required this.isBookmarkUpdating,
+    required this.applicationsLocked,
+    required this.onApply,
+    required this.onToggleBookmark,
   });
 
-  final StudentNavTab activeTab;
-  final String title;
-  final String subtitle;
-  final Widget child;
+  final JobItem job;
+  final bool isApplying;
+  final bool isBookmarkUpdating;
+  final bool applicationsLocked;
+  final VoidCallback onApply;
+  final VoidCallback onToggleBookmark;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFFFF4E7), Color(0xFFFFFCF8)],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
+    final TextTheme textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBF7),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFFE2CB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              StudentNavbar(
-                studentName: SessionStore.studentName,
-                onLogout: () {
-                  SessionStore.clear();
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/',
-                    (route) => false,
-                  );
-                },
-                activeTab: activeTab,
-                onHomeTap: () => Navigator.pushReplacementNamed(
-                  context,
-                  StudentDashboardScreen.routeName,
-                ),
-                onJobsTap: () => Navigator.pushReplacementNamed(
-                  context,
-                  StudentJobsScreen.routeName,
-                ),
-                onApplicationsTap: () => Navigator.pushReplacementNamed(
-                  context,
-                  StudentApplicationsScreen.routeName,
-                ),
-                onBookmarksTap: () => Navigator.pushReplacementNamed(
-                  context,
-                  StudentBookmarksScreen.routeName,
-                ),
-              ),
               Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFFFE1CA)),
-                      ),
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: Theme.of(context).textTheme.headlineSmall,
-                          ),
-                          const SizedBox(height: 6),
-                          Text(subtitle),
-                          const SizedBox(height: 14),
-                          child,
-                        ],
+                    Text(job.title, style: textTheme.titleLarge),
+                    const SizedBox(height: 4),
+                    Text(
+                      job.company,
+                      style: textTheme.titleMedium?.copyWith(
+                        color: const Color(0xFFC75A00),
                       ),
                     ),
-                    const SizedBox(height: 18),
                   ],
+                ),
+              ),
+              IconButton(
+                onPressed: isBookmarkUpdating ? null : onToggleBookmark,
+                tooltip: job.isBookmarked ? 'Remove bookmark' : 'Bookmark job',
+                icon: Icon(
+                  job.isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                  color: const Color(0xFFC75A00),
                 ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _MetaChip(label: job.location, icon: Icons.location_on_outlined),
+              _MetaChip(
+                label: '${job.packageLpa} LPA',
+                icon: Icons.payments_outlined,
+              ),
+              _MetaChip(
+                label: 'Deadline ${job.deadline}',
+                icon: Icons.event_outlined,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(job.description, style: textTheme.bodyMedium),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              FilledButton(
+                onPressed: job.isApplied || isApplying || applicationsLocked ? null : onApply,
+                child: Text(
+                  job.isApplied
+                      ? 'Applied'
+                      : applicationsLocked
+                          ? 'Locked'
+                          : isApplying
+                              ? 'Applying...'
+                              : 'Apply Now',
+                ),
+              ),
+              const SizedBox(width: 10),
+              if (job.isBookmarked)
+                const Chip(
+                  label: Text('Saved'),
+                  avatar: Icon(Icons.bookmark, size: 18),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }
 }
 
-class StudentInfoCard extends StatelessWidget {
-  const StudentInfoCard({
-    super.key,
-    required this.title,
-    required this.detail,
-    this.actionLabel,
-    this.onActionTap,
+class _MetaChip extends StatelessWidget {
+  const _MetaChip({
+    required this.label,
+    required this.icon,
   });
 
-  final String title;
-  final String detail;
-  final String? actionLabel;
-  final VoidCallback? onActionTap;
+  final String label;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF8F1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFFE4CE)),
+        color: const Color(0xFFFFF1E4),
+        borderRadius: BorderRadius.circular(999),
       ),
-      padding: const EdgeInsets.all(14),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.work_outline, color: Color(0xFFC75A00)),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 4),
-                Text(detail),
-              ],
-            ),
-          ),
-          if (actionLabel != null) ...[
-            const SizedBox(width: 10),
-            OutlinedButton(onPressed: onActionTap, child: Text(actionLabel!)),
-          ],
+          Icon(icon, size: 16, color: const Color(0xFF9B4D0A)),
+          const SizedBox(width: 6),
+          Text(label),
         ],
       ),
     );

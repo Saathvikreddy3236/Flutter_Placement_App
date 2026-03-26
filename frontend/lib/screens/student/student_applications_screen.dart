@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../../models/api_models.dart';
 import '../../services/api_service.dart';
@@ -19,6 +19,8 @@ class StudentApplicationsScreen extends StatefulWidget {
 class _StudentApplicationsScreenState extends State<StudentApplicationsScreen> {
   final ApiService _api = const ApiService();
   late Future<List<ApplicationItem>> _applicationsFuture;
+  List<ApplicationItem> _applications = const <ApplicationItem>[];
+  final Set<int> _busyApplicationIds = <int>{};
 
   @override
   void initState() {
@@ -26,12 +28,16 @@ class _StudentApplicationsScreenState extends State<StudentApplicationsScreen> {
     _applicationsFuture = _fetchApplications();
   }
 
-  Future<List<ApplicationItem>> _fetchApplications() {
+  Future<List<ApplicationItem>> _fetchApplications() async {
     final int? studentId = SessionStore.studentId;
     if (studentId == null) {
       throw Exception('Please login first.');
     }
-    return _api.fetchMyApplications(studentId);
+    final List<ApplicationItem> applications = await _api.fetchMyApplications(
+      studentId,
+    );
+    _applications = applications;
+    return applications;
   }
 
   Future<void> _refresh() async {
@@ -41,16 +47,49 @@ class _StudentApplicationsScreenState extends State<StudentApplicationsScreen> {
     await _applicationsFuture;
   }
 
+  Future<void> _respond(ApplicationItem application, String decision) async {
+    final int? studentId = SessionStore.studentId;
+    if (studentId == null || _busyApplicationIds.contains(application.id)) {
+      return;
+    }
+
+    setState(() => _busyApplicationIds.add(application.id));
+    try {
+      final String message = await _api.respondToOffer(
+        studentId: studentId,
+        applicationId: application.id,
+        decision: decision,
+      );
+      await _refresh();
+      _showMessage(message);
+    } catch (e) {
+      _showMessage(e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) {
+        setState(() => _busyApplicationIds.remove(application.id));
+      }
+    }
+  }
+
+  void _showMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return StudentSectionShell(
       activeTab: StudentNavTab.applications,
       title: 'My Applications',
-      subtitle: 'Track all roles you applied for and their latest status.',
+      subtitle:
+          'Track all roles you applied for. If an offer arrives, you can accept or reject it here.',
       child: FutureBuilder<List<ApplicationItem>>(
         future: _applicationsFuture,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              _applications.isEmpty) {
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(12),
@@ -58,7 +97,7 @@ class _StudentApplicationsScreenState extends State<StudentApplicationsScreen> {
               ),
             );
           }
-          if (snapshot.hasError) {
+          if (snapshot.hasError && _applications.isEmpty) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -69,27 +108,147 @@ class _StudentApplicationsScreenState extends State<StudentApplicationsScreen> {
             );
           }
 
-          final List<ApplicationItem> applications = snapshot.data ?? const [];
-          if (applications.isEmpty) {
+          if (_applications.isEmpty) {
             return const Text('You have not applied to any jobs yet.');
           }
 
           return Column(
-            children: applications
-                .map(
-                  (application) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: StudentInfoCard(
-                      title: '${application.company} - ${application.jobTitle}',
-                      detail:
-                          'Status: ${application.status} | ${application.location}',
+            children: [
+              if (_applications.any((item) => item.status == 'Accepted'))
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFC75A00), Color(0xFFE79A45)],
                     ),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                )
-                .toList(growable: false),
+                  child: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Congratulations!',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      SizedBox(height: 6),
+                      Text(
+                        'You have accepted an offer. Your placement is confirmed and all other applications are now closed.',
+                        style: TextStyle(color: Color(0xFFFFF2E6)),
+                      ),
+                    ],
+                  ),
+                ),
+              if (_applications.any((item) => item.status == 'Accepted'))
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF4E7),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFFFD9BA)),
+                  ),
+                  child: const Text(
+                    'You have already accepted an offer. New job applications are now locked.',
+                  ),
+                ),
+              for (final ApplicationItem application in _applications) ...[
+                _ApplicationCard(
+                  application: application,
+                  loading: _busyApplicationIds.contains(application.id),
+                  onAccept: () => _respond(application, 'accept'),
+                  onReject: () => _respond(application, 'reject'),
+                ),
+                const SizedBox(height: 10),
+              ],
+            ],
           );
         },
       ),
+    );
+  }
+}
+
+class _ApplicationCard extends StatelessWidget {
+  const _ApplicationCard({
+    required this.application,
+    required this.loading,
+    required this.onAccept,
+    required this.onReject,
+  });
+
+  final ApplicationItem application;
+  final bool loading;
+  final VoidCallback onAccept;
+  final VoidCallback onReject;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool canRespond = application.status == 'Offered';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFFE1CA)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${application.company} - ${application.jobTitle}',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Status: ${application.status} | ${application.location} | ${application.packageLpa} LPA',
+          ),
+          const SizedBox(height: 10),
+          if (canRespond)
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                FilledButton(
+                  onPressed: loading ? null : onAccept,
+                  child: Text(loading ? 'Updating...' : 'Accept Offer'),
+                ),
+                OutlinedButton(
+                  onPressed: loading ? null : onReject,
+                  child: const Text('Reject Offer'),
+                ),
+              ],
+            )
+          else
+            _StatusChip(status: application.status),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.status});
+
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF4E7),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(status),
     );
   }
 }

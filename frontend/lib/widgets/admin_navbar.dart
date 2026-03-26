@@ -6,6 +6,7 @@ class AdminNavbar extends StatelessWidget {
   const AdminNavbar({
     super.key,
     required this.adminName,
+    required this.onProfileTap,
     required this.onLogout,
     required this.activeTab,
     required this.onDashboardTap,
@@ -15,6 +16,7 @@ class AdminNavbar extends StatelessWidget {
   });
 
   final String adminName;
+  final VoidCallback onProfileTap;
   final VoidCallback onLogout;
   final AdminNavTab activeTab;
   final VoidCallback onDashboardTap;
@@ -46,7 +48,7 @@ class AdminNavbar extends StatelessWidget {
               onTap: onApplicantsTap,
             ),
             _NavChip(
-              label: 'Analytics',
+              label: 'Companies',
               active: activeTab == AdminNavTab.analytics,
               onTap: onAnalyticsTap,
             ),
@@ -60,7 +62,11 @@ class AdminNavbar extends StatelessWidget {
                 const SizedBox(height: 10),
                 Wrap(spacing: 8, runSpacing: 8, children: navChips),
                 const SizedBox(height: 10),
-                _ProfileCard(adminName: adminName, onLogout: onLogout),
+                _ProfileCard(
+                  adminName: adminName,
+                  onProfileTap: onProfileTap,
+                  onLogout: onLogout,
+                ),
               ],
             );
           }
@@ -73,7 +79,11 @@ class AdminNavbar extends StatelessWidget {
                 child: Wrap(spacing: 8, runSpacing: 8, children: navChips),
               ),
               const SizedBox(width: 12),
-              _ProfileCard(adminName: adminName, onLogout: onLogout),
+              _ProfileCard(
+                adminName: adminName,
+                onProfileTap: onProfileTap,
+                onLogout: onLogout,
+              ),
             ],
           );
         },
@@ -163,9 +173,14 @@ class _NavChip extends StatelessWidget {
 }
 
 class _ProfileCard extends StatelessWidget {
-  const _ProfileCard({required this.adminName, required this.onLogout});
+  const _ProfileCard({
+    required this.adminName,
+    required this.onProfileTap,
+    required this.onLogout,
+  });
 
   final String adminName;
+  final VoidCallback onProfileTap;
   final VoidCallback onLogout;
 
   @override
@@ -180,17 +195,26 @@ class _ProfileCard extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.admin_panel_settings,
-            color: Color(0xFFC75A00),
-            size: 27,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            adminName,
-            style: const TextStyle(
-              color: Color(0xFF4B2D18),
-              fontWeight: FontWeight.w600,
+          InkWell(
+            onTap: onProfileTap,
+            borderRadius: BorderRadius.circular(10),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.admin_panel_settings,
+                  color: Color(0xFFC75A00),
+                  size: 27,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  adminName,
+                  style: const TextStyle(
+                    color: Color(0xFF4B2D18),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(width: 8),

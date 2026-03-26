@@ -39,6 +39,8 @@ class Application(models.Model):
     STATUS_CHOICES = (
         ('Pending', 'Pending'),
         ('Selected', 'Selected'),
+        ('Offered', 'Offered'),
+        ('Accepted', 'Accepted'),
         ('Rejected', 'Rejected'),
     )
 
@@ -52,4 +54,19 @@ class Application(models.Model):
 
     def __str__(self):
         return f"{self.student.user.username} - {self.job.title}"
+
+
+# -------------------------------
+# 4 Bookmark Model
+# -------------------------------
+class Bookmark(models.Model):
+    student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE)
+    job = models.ForeignKey(Job, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('student', 'job')
+
+    def __str__(self):
+        return f"{self.student.user.username} saved {self.job.title}"
 

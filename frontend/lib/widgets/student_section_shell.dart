@@ -5,6 +5,7 @@ import '../screens/student/student_bookmarks_screen.dart';
 import '../screens/student/student_dashboard_screen.dart';
 import '../screens/student/student_jobs_screen.dart';
 import '../services/session_store.dart';
+import 'profile_dialog.dart';
 import 'student_navbar.dart';
 
 class StudentSectionShell extends StatelessWidget {
@@ -37,6 +38,7 @@ class StudentSectionShell extends StatelessWidget {
             children: [
               StudentNavbar(
                 studentName: SessionStore.studentName,
+                onProfileTap: () => showProfileDialog(context),
                 onLogout: () {
                   SessionStore.clear();
                   Navigator.pushNamedAndRemoveUntil(

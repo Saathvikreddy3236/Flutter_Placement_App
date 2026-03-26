@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../screens/admin/admin_dashboard_screen.dart';
 import '../services/session_store.dart';
 import 'admin_navbar.dart';
+import 'profile_dialog.dart';
 
 class AdminSectionShell extends StatelessWidget {
   const AdminSectionShell({
@@ -34,6 +35,7 @@ class AdminSectionShell extends StatelessWidget {
             children: [
               AdminNavbar(
                 adminName: SessionStore.studentName,
+                onProfileTap: () => showProfileDialog(context),
                 onLogout: () {
                   SessionStore.clear();
                   Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);

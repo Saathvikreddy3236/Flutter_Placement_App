@@ -1,15 +1,39 @@
 import 'package:flutter/material.dart';
 
+import '../../models/api_models.dart';
+import '../../services/api_service.dart';
 import '../../services/session_store.dart';
 import '../../widgets/admin_navbar.dart';
+import '../../widgets/profile_dialog.dart';
 import 'admin_analytics_screen.dart';
 import 'admin_applicants_screen.dart';
 import 'admin_postings_screen.dart';
 
-class AdminDashboardScreen extends StatelessWidget {
+class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
 
   static const String routeName = '/admin-dashboard';
+
+  @override
+  State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
+}
+
+class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
+  final ApiService _api = const ApiService();
+  late Future<AdminDashboardData> _dashboardFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _dashboardFuture = _api.fetchAdminDashboard();
+  }
+
+  Future<void> _refresh() async {
+    setState(() {
+      _dashboardFuture = _api.fetchAdminDashboard();
+    });
+    await _dashboardFuture;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,13 +87,10 @@ class AdminDashboardScreen extends StatelessWidget {
             children: [
               AdminNavbar(
                 adminName: SessionStore.studentName,
+                onProfileTap: () => showProfileDialog(context),
                 onLogout: () {
                   SessionStore.clear();
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/',
-                    (route) => false,
-                  );
+                  Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                 },
                 activeTab: AdminNavTab.dashboard,
                 onDashboardTap: () {},
@@ -86,7 +107,32 @@ class AdminDashboardScreen extends StatelessWidget {
                   AdminAnalyticsScreen.routeName,
                 ),
               ),
-              const Expanded(child: _AdminDashboardBody()),
+              Expanded(
+                child: FutureBuilder<AdminDashboardData>(
+                  future: _dashboardFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return Padding(
+                        padding: const EdgeInsets.all(18),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Failed to load admin dashboard: ${snapshot.error}'),
+                            const SizedBox(height: 10),
+                            OutlinedButton(onPressed: _refresh, child: const Text('Retry')),
+                          ],
+                        ),
+                      );
+                    }
+
+                    final AdminDashboardData data = snapshot.data!;
+                    return _DashboardBody(data: data);
+                  },
+                ),
+              ),
             ],
           ),
         ),
@@ -95,68 +141,44 @@ class AdminDashboardScreen extends StatelessWidget {
   }
 }
 
-class _AdminDashboardBody extends StatelessWidget {
-  const _AdminDashboardBody();
+class _DashboardBody extends StatelessWidget {
+  const _DashboardBody({required this.data});
+
+  final AdminDashboardData data;
 
   @override
   Widget build(BuildContext context) {
-    final TextTheme textTheme = Theme.of(context).textTheme;
-
     return ListView(
       padding: const EdgeInsets.all(18),
       children: [
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final bool compact = constraints.maxWidth < 760;
-            if (compact) {
-              return Column(
+        Row(
+          children: [
+            Expanded(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Welcome back, ${SessionStore.studentName}!',
-                    style: textTheme.headlineSmall,
+                    style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    "Here's what's happening with your recruitment cycle today.",
-                    style: textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 12),
-                  FilledButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.add),
-                    label: const Text('Post New Job'),
+                    'Track new postings, student applications, and company activity from one place.',
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],
-              );
-            }
-
-            return Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Welcome back, ${SessionStore.studentName}!',
-                        style: textTheme.headlineSmall,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "Here's what's happening with your recruitment cycle today.",
-                        style: textTheme.bodyMedium,
-                      ),
-                    ],
-                  ),
-                ),
-                FilledButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.add),
-                  label: const Text('Post New Job'),
-                ),
-              ],
-            );
-          },
+              ),
+            ),
+            const SizedBox(width: 12),
+            FilledButton.icon(
+              onPressed: () => Navigator.pushReplacementNamed(
+                context,
+                AdminPostingsScreen.routeName,
+              ),
+              icon: const Icon(Icons.add),
+              label: const Text('Post New Job'),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         LayoutBuilder(
@@ -164,36 +186,34 @@ class _AdminDashboardBody extends StatelessWidget {
             final int columns = constraints.maxWidth > 1100
                 ? 4
                 : constraints.maxWidth > 640
-                ? 2
-                : 1;
-
-            final List<Widget> cards = const [
+                    ? 2
+                    : 1;
+            final List<Widget> cards = [
               _StatCard(
                 icon: Icons.work_outline_rounded,
                 title: 'Active Job Posts',
-                value: '12',
-                badge: '+2 New',
+                value: '${data.stats.activeJobPosts}',
+                badge: 'Live',
               ),
               _StatCard(
                 icon: Icons.groups_2_outlined,
                 title: 'Total Applicants',
-                value: '842',
-                badge: 'Total',
+                value: '${data.stats.totalApplicants}',
+                badge: 'All jobs',
               ),
               _StatCard(
-                icon: Icons.how_to_reg_outlined,
-                title: 'Shortlisted Students',
-                value: '156',
-                badge: 'Step 2',
+                icon: Icons.workspace_premium_outlined,
+                title: 'Offered',
+                value: '${data.stats.offeredStudents}',
+                badge: 'Final stage',
               ),
               _StatCard(
-                icon: Icons.calendar_month_outlined,
-                title: 'Scheduled Interviews',
-                value: '24',
-                badge: 'Upcoming',
+                icon: Icons.person_off_outlined,
+                title: 'Rejected',
+                value: '${data.stats.rejectedStudents}',
+                badge: 'Completed',
               ),
             ];
-
             return GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -209,7 +229,28 @@ class _AdminDashboardBody extends StatelessWidget {
           },
         ),
         const SizedBox(height: 16),
-        const _Footer(),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final bool wide = constraints.maxWidth > 920;
+            if (wide) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: _RecentJobsCard(jobs: data.recentJobs)),
+                  const SizedBox(width: 12),
+                  Expanded(child: _RecentApplicantsCard(applicants: data.recentApplicants)),
+                ],
+              );
+            }
+            return Column(
+              children: [
+                _RecentJobsCard(jobs: data.recentJobs),
+                const SizedBox(height: 12),
+                _RecentApplicantsCard(applicants: data.recentApplicants),
+              ],
+            );
+          },
+        ),
       ],
     );
   }
@@ -265,9 +306,10 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 3),
           Text(
             value,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(color: const Color(0xFFC75A00)),
+            style: Theme.of(context)
+                .textTheme
+                .headlineSmall
+                ?.copyWith(color: const Color(0xFFC75A00)),
           ),
         ],
       ),
@@ -275,37 +317,107 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _Footer extends StatelessWidget {
-  const _Footer();
+class _RecentJobsCard extends StatelessWidget {
+  const _RecentJobsCard({required this.jobs});
+
+  final List<JobItem> jobs;
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 10),
+    return _PanelCard(
+      title: 'Recent Jobs',
+      child: jobs.isEmpty
+          ? const Text('No jobs posted yet.')
+          : Column(
+              children: [
+                for (final JobItem job in jobs) ...[
+                  _MiniRow(
+                    title: '${job.company} - ${job.title}',
+                    subtitle: '${job.location} | ${job.packageLpa} LPA | ${job.deadline}',
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              ],
+            ),
+    );
+  }
+}
+
+class _RecentApplicantsCard extends StatelessWidget {
+  const _RecentApplicantsCard({required this.applicants});
+
+  final List<AdminApplicantItem> applicants;
+
+  @override
+  Widget build(BuildContext context) {
+    return _PanelCard(
+      title: 'Recent Applicants',
+      child: applicants.isEmpty
+          ? const Text('No applications received yet.')
+          : Column(
+              children: [
+                for (final AdminApplicantItem applicant in applicants) ...[
+                  _MiniRow(
+                    title: '${applicant.studentName} - ${applicant.jobTitle}',
+                    subtitle: '${applicant.company} | ${applicant.status}',
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              ],
+            ),
+    );
+  }
+}
+
+class _PanelCard extends StatelessWidget {
+  const _PanelCard({required this.title, required this.child});
+
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFFE1CA)),
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '© 2026 CampusHire CampusHeir. All rights reserved.',
-            style: TextStyle(color: Color(0xFF8F715D)),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 6),
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 16,
-            runSpacing: 6,
-            children: [
-              Text(
-                'Support Center',
-                style: TextStyle(color: Color(0xFF8F715D)),
-              ),
-              Text(
-                'Privacy Policy',
-                style: TextStyle(color: Color(0xFF8F715D)),
-              ),
-              Text('System Status', style: TextStyle(color: Color(0xFF8F715D))),
-            ],
-          ),
+          Text(title, style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniRow extends StatelessWidget {
+  const _MiniRow({required this.title, required this.subtitle});
+
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFAF5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFFE9D8)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 4),
+          Text(subtitle),
         ],
       ),
     );
