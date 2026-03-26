@@ -10,13 +10,14 @@ class ApiService {
   const ApiService();
 
   static const String _apiBaseFromEnv = String.fromEnvironment('API_BASE_URL');
+  static const String _defaultLanBaseUrl = 'http://172.50.10.122:8000/api';
 
   static String get _baseUrl {
     final String envUrl = _apiBaseFromEnv.trim();
     if (envUrl.isNotEmpty) return envUrl;
     if (kIsWeb) return 'http://127.0.0.1:8000/api';
     if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:8000/api';
+      return _defaultLanBaseUrl;
     }
     return 'http://127.0.0.1:8000/api';
   }
