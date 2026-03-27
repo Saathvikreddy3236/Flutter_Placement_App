@@ -160,21 +160,6 @@ class _LandingScreenState extends State<LandingScreen> {
                                   ),
                                 ),
                                 const SizedBox(height: 24),
-                                _Section(
-                                  title: 'Featured recruiters',
-                                  subtitle:
-                                      'Companies currently visible in the portal based on the jobs already posted in the backend.',
-                                  child: Wrap(
-                                    spacing: 12,
-                                    runSpacing: 12,
-                                    children: data.featuredCompanies
-                                        .map(
-                                          (company) => _FeaturedCompanyCard(company: company),
-                                        )
-                                        .toList(growable: false),
-                                  ),
-                                ),
-                                const SizedBox(height: 24),
                                 Container(
                                   key: _recruitmentKey,
                                   child: _Section(
@@ -494,32 +479,6 @@ class _HeroMetric extends StatelessWidget {
             label,
             style: textTheme.bodySmall?.copyWith(color: Colors.white),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FeaturedCompanyCard extends StatelessWidget {
-  const _FeaturedCompanyCard({required this.company});
-
-  final LandingCompanyItem company;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 240,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF3E8),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(company.company, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 6),
-          Text('${company.jobCount} live role(s) in the portal'),
         ],
       ),
     );

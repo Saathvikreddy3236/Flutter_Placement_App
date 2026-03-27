@@ -13,13 +13,19 @@ class ApiService {
   static const String _defaultLanBaseUrl = 'http://172.50.10.122:8000/api';
 
   static String get _baseUrl {
-    final String envUrl = _apiBaseFromEnv.trim();
+    final String envUrl = _normalizeBaseUrl(_apiBaseFromEnv);
     if (envUrl.isNotEmpty) return envUrl;
     if (kIsWeb) return 'http://127.0.0.1:8000/api';
     if (defaultTargetPlatform == TargetPlatform.android) {
       return _defaultLanBaseUrl;
     }
     return 'http://127.0.0.1:8000/api';
+  }
+
+  static String _normalizeBaseUrl(String rawUrl) {
+    final String trimmed = rawUrl.trim();
+    if (trimmed.isEmpty) return '';
+    return trimmed.replaceAll(RegExp(r'\s+'), '');
   }
 
   Uri _uri(String path, [Map<String, String>? queryParameters]) {
