@@ -4,6 +4,7 @@ import '../../models/api_models.dart';
 import '../../services/api_service.dart';
 import '../../services/session_store.dart';
 import '../../widgets/admin_navbar.dart';
+import '../../widgets/logout_back_guard.dart';
 import '../../widgets/profile_dialog.dart';
 import 'admin_analytics_screen.dart';
 import 'admin_applicants_screen.dart';
@@ -73,67 +74,69 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       );
     }
 
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFFFF4E7), Color(0xFFFFFCF8)],
+    return LogoutBackGuard(
+      child: Scaffold(
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFFFFF4E7), Color(0xFFFFFCF8)],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              AdminNavbar(
-                adminName: SessionStore.studentName,
-                onProfileTap: () => showProfileDialog(context),
-                onLogout: () {
-                  SessionStore.clear();
-                  Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-                },
-                activeTab: AdminNavTab.dashboard,
-                onDashboardTap: () {},
-                onPostingsTap: () => Navigator.pushReplacementNamed(
-                  context,
-                  AdminPostingsScreen.routeName,
-                ),
-                onApplicantsTap: () => Navigator.pushReplacementNamed(
-                  context,
-                  AdminApplicantsScreen.routeName,
-                ),
-                onAnalyticsTap: () => Navigator.pushReplacementNamed(
-                  context,
-                  AdminAnalyticsScreen.routeName,
-                ),
-              ),
-              Expanded(
-                child: FutureBuilder<AdminDashboardData>(
-                  future: _dashboardFuture,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    if (snapshot.hasError) {
-                      return Padding(
-                        padding: const EdgeInsets.all(18),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Failed to load admin dashboard: ${snapshot.error}'),
-                            const SizedBox(height: 10),
-                            OutlinedButton(onPressed: _refresh, child: const Text('Retry')),
-                          ],
-                        ),
-                      );
-                    }
-
-                    final AdminDashboardData data = snapshot.data!;
-                    return _DashboardBody(data: data);
+          child: SafeArea(
+            child: Column(
+              children: [
+                AdminNavbar(
+                  adminName: SessionStore.studentName,
+                  onProfileTap: () => showProfileDialog(context),
+                  onLogout: () {
+                    SessionStore.clear();
+                    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                   },
+                  activeTab: AdminNavTab.dashboard,
+                  onDashboardTap: () {},
+                  onPostingsTap: () => Navigator.pushReplacementNamed(
+                    context,
+                    AdminPostingsScreen.routeName,
+                  ),
+                  onApplicantsTap: () => Navigator.pushReplacementNamed(
+                    context,
+                    AdminApplicantsScreen.routeName,
+                  ),
+                  onAnalyticsTap: () => Navigator.pushReplacementNamed(
+                    context,
+                    AdminAnalyticsScreen.routeName,
+                  ),
                 ),
-              ),
-            ],
+                Expanded(
+                  child: FutureBuilder<AdminDashboardData>(
+                    future: _dashboardFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (snapshot.hasError) {
+                        return Padding(
+                          padding: const EdgeInsets.all(18),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Failed to load admin dashboard: ${snapshot.error}'),
+                              const SizedBox(height: 10),
+                              OutlinedButton(onPressed: _refresh, child: const Text('Retry')),
+                            ],
+                          ),
+                        );
+                      }
+
+                      final AdminDashboardData data = snapshot.data!;
+                      return _DashboardBody(data: data);
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

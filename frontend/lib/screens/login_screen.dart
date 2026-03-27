@@ -66,9 +66,17 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       if (!mounted) return;
       if (response.role == 'admin') {
-        Navigator.pushReplacementNamed(context, AdminDashboardScreen.routeName);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AdminDashboardScreen.routeName,
+          (route) => false,
+        );
       } else {
-        Navigator.pushReplacementNamed(context, StudentDashboardScreen.routeName);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          StudentDashboardScreen.routeName,
+          (route) => false,
+        );
       }
     } catch (e) {
       setState(() {

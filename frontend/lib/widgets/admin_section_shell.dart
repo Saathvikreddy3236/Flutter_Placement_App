@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../screens/admin/admin_dashboard_screen.dart';
 import '../services/session_store.dart';
 import 'admin_navbar.dart';
+import 'logout_back_guard.dart';
 import 'profile_dialog.dart';
 
 class AdminSectionShell extends StatelessWidget {
@@ -21,75 +22,77 @@ class AdminSectionShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFFFF4E7), Color(0xFFFFFCF8)],
+    return LogoutBackGuard(
+      child: Scaffold(
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFFFFF4E7), Color(0xFFFFFCF8)],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              AdminNavbar(
-                adminName: SessionStore.studentName,
-                onProfileTap: () => showProfileDialog(context),
-                onLogout: () {
-                  SessionStore.clear();
-                  Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-                },
-                activeTab: activeTab,
-                onDashboardTap: () => Navigator.pushReplacementNamed(
-                  context,
-                  AdminDashboardScreen.routeName,
+          child: SafeArea(
+            child: Column(
+              children: [
+                AdminNavbar(
+                  adminName: SessionStore.studentName,
+                  onProfileTap: () => showProfileDialog(context),
+                  onLogout: () {
+                    SessionStore.clear();
+                    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+                  },
+                  activeTab: activeTab,
+                  onDashboardTap: () => Navigator.pushReplacementNamed(
+                    context,
+                    AdminDashboardScreen.routeName,
+                  ),
+                  onPostingsTap: () => Navigator.pushReplacementNamed(
+                    context,
+                    '/admin/postings',
+                  ),
+                  onApplicantsTap: () => Navigator.pushReplacementNamed(
+                    context,
+                    '/admin/applicants',
+                  ),
+                  onAnalyticsTap: () => Navigator.pushReplacementNamed(
+                    context,
+                    '/admin/analytics',
+                  ),
                 ),
-                onPostingsTap: () => Navigator.pushReplacementNamed(
-                  context,
-                  '/admin/postings',
-                ),
-                onApplicantsTap: () => Navigator.pushReplacementNamed(
-                  context,
-                  '/admin/applicants',
-                ),
-                onAnalyticsTap: () => Navigator.pushReplacementNamed(
-                  context,
-                  '/admin/analytics',
-                ),
-              ),
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.all(18),
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFFFFE1CA)),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.all(18),
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFFFFE1CA)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              style: Theme.of(context).textTheme.headlineSmall,
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              subtitle,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ],
+                        ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: Theme.of(context).textTheme.headlineSmall,
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            subtitle,
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    child,
-                  ],
+                      const SizedBox(height: 12),
+                      child,
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

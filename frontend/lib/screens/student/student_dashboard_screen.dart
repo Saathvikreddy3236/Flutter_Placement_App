@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/api_models.dart';
 import '../../services/api_service.dart';
 import '../../services/session_store.dart';
+import '../../widgets/logout_back_guard.dart';
 import '../../widgets/student_navbar.dart';
 import '../../widgets/profile_dialog.dart';
 import 'student_applications_screen.dart';
@@ -45,70 +46,72 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFFFF4E7), Color(0xFFFFFCF8)],
+    return LogoutBackGuard(
+      child: Scaffold(
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFFFFF4E7), Color(0xFFFFFCF8)],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              StudentNavbar(
-                studentName: SessionStore.studentName,
-                onProfileTap: () => showProfileDialog(context),
-                onLogout: () {
-                  SessionStore.clear();
-                  Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-                },
-                activeTab: null,
-                onHomeTap: () {},
-                onJobsTap: () => Navigator.pushReplacementNamed(
-                  context,
-                  StudentJobsScreen.routeName,
-                ),
-                onApplicationsTap: () => Navigator.pushReplacementNamed(
-                  context,
-                  StudentApplicationsScreen.routeName,
-                ),
-                onBookmarksTap: () => Navigator.pushReplacementNamed(
-                  context,
-                  StudentBookmarksScreen.routeName,
-                ),
-              ),
-              Expanded(
-                child: FutureBuilder<StudentDashboardData>(
-                  future: _dashboardFuture,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    if (snapshot.hasError) {
-                      return Padding(
-                        padding: const EdgeInsets.all(18),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Failed to load dashboard: ${snapshot.error}'),
-                            const SizedBox(height: 8),
-                            OutlinedButton(
-                              onPressed: _refresh,
-                              child: const Text('Retry'),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-
-                    final StudentDashboardData dashboard = snapshot.data!;
-                    return _DashboardBody(data: dashboard);
+          child: SafeArea(
+            child: Column(
+              children: [
+                StudentNavbar(
+                  studentName: SessionStore.studentName,
+                  onProfileTap: () => showProfileDialog(context),
+                  onLogout: () {
+                    SessionStore.clear();
+                    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                   },
+                  activeTab: null,
+                  onHomeTap: () {},
+                  onJobsTap: () => Navigator.pushReplacementNamed(
+                    context,
+                    StudentJobsScreen.routeName,
+                  ),
+                  onApplicationsTap: () => Navigator.pushReplacementNamed(
+                    context,
+                    StudentApplicationsScreen.routeName,
+                  ),
+                  onBookmarksTap: () => Navigator.pushReplacementNamed(
+                    context,
+                    StudentBookmarksScreen.routeName,
+                  ),
                 ),
-              ),
-            ],
+                Expanded(
+                  child: FutureBuilder<StudentDashboardData>(
+                    future: _dashboardFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (snapshot.hasError) {
+                        return Padding(
+                          padding: const EdgeInsets.all(18),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Failed to load dashboard: ${snapshot.error}'),
+                              const SizedBox(height: 8),
+                              OutlinedButton(
+                                onPressed: _refresh,
+                                child: const Text('Retry'),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      final StudentDashboardData dashboard = snapshot.data!;
+                      return _DashboardBody(data: dashboard);
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
