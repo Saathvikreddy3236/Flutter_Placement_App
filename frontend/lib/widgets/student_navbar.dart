@@ -111,7 +111,7 @@ class _BrandCard extends StatelessWidget {
         ),
         child: const Text.rich(
           TextSpan(
-            text: 'CampusHire\n',
+            text: 'Placement Portal\n',
             style: TextStyle(
               color: Color(0xFFB24B00),
               fontSize: 16,

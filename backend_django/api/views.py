@@ -1,5 +1,5 @@
 from django.contrib.auth import authenticate
-from django.db.models import Avg, Count, Q
+from django.db.models import Avg, Count, Max, Q
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -194,8 +194,12 @@ def landing_summary(request):
     highest_package = Job.objects.order_by('-package').values_list('package', flat=True).first() or 0
     featured_companies = list(
         Job.objects.values('company')
-        .annotate(job_count=Count('id'))
-        .order_by('-job_count', 'company')[:4]
+        .annotate(
+            job_count=Count('id'),
+            applicant_count=Count('application', distinct=True),
+            highest_package_lpa=Max('package'),
+        )
+        .order_by('-highest_package_lpa', '-applicant_count', 'company')[:4]
     )
 
     return Response(

@@ -114,7 +114,7 @@ class LandingFooter extends StatelessWidget {
             runSpacing: 6,
             children: [
               Text(
-                '(c) 2026 NIT AP Placement Portal',
+                '(c) 2026 Placement Portal NIT AP',
                 style: TextStyle(color: Color(0xFFFFDCC3)),
               ),
               Text(
@@ -140,7 +140,7 @@ class _BrandColumn extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Placement Portal',
+          'Placement Portal NIT AP',
           style: textTheme.titleLarge?.copyWith(
             color: Colors.white,
             fontWeight: FontWeight.w700,

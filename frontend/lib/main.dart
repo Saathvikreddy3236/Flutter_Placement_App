@@ -23,7 +23,7 @@ class PlacementPortalApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Placement Portal',
+      title: 'Placement Portal NIT AP',
       theme: AppTheme.light,
       initialRoute: LandingScreen.routeName,
       routes: <String, WidgetBuilder>{

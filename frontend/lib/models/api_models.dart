@@ -542,10 +542,10 @@ class LandingHeroStats {
 
   factory LandingHeroStats.fromJson(Map<String, dynamic> json) {
     return LandingHeroStats(
-      upcomingDrives: json['upcoming_drives'] as int? ?? 0,
-      activeRoles: json['active_roles'] as int? ?? 0,
-      interviewSlots: json['interview_slots'] as int? ?? 0,
-      offerCalls: json['offer_calls'] as int? ?? 0,
+      upcomingDrives: (json['upcoming_drives'] as num?)?.toInt() ?? 0,
+      activeRoles: (json['active_roles'] as num?)?.toInt() ?? 0,
+      interviewSlots: (json['interview_slots'] as num?)?.toInt() ?? 0,
+      offerCalls: (json['offer_calls'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -567,11 +567,11 @@ class LandingOutcomeStats {
 
   factory LandingOutcomeStats.fromJson(Map<String, dynamic> json) {
     return LandingOutcomeStats(
-      studentsPlaced: json['students_placed'] as int? ?? 0,
-      placementRate: json['placement_rate'] as int? ?? 0,
-      highestPackageLpa: json['highest_package_lpa'] as int? ?? 0,
+      studentsPlaced: (json['students_placed'] as num?)?.toInt() ?? 0,
+      placementRate: (json['placement_rate'] as num?)?.toInt() ?? 0,
+      highestPackageLpa: (json['highest_package_lpa'] as num?)?.toInt() ?? 0,
       averagePackageLpa: (json['average_package_lpa'] as num?)?.toDouble() ?? 0,
-      companiesVisited: json['companies_visited'] as int? ?? 0,
+      companiesVisited: (json['companies_visited'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -580,15 +580,21 @@ class LandingCompanyItem {
   const LandingCompanyItem({
     required this.company,
     required this.jobCount,
+    required this.applicantCount,
+    required this.highestPackageLpa,
   });
 
   final String company;
   final int jobCount;
+  final int applicantCount;
+  final int highestPackageLpa;
 
   factory LandingCompanyItem.fromJson(Map<String, dynamic> json) {
     return LandingCompanyItem(
       company: json['company'] as String? ?? '',
-      jobCount: json['job_count'] as int? ?? 0,
+      jobCount: (json['job_count'] as num?)?.toInt() ?? 0,
+      applicantCount: (json['applicant_count'] as num?)?.toInt() ?? 0,
+      highestPackageLpa: (json['highest_package_lpa'] as num?)?.toInt() ?? 0,
     );
   }
 }

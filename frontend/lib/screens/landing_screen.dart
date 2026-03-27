@@ -160,6 +160,46 @@ class _LandingScreenState extends State<LandingScreen> {
                                   ),
                                 ),
                                 const SizedBox(height: 24),
+                                _Section(
+                                  title: 'Top companies at NIT AP',
+                                  subtitle:
+                                      'Leading recruiters that have come to the college, ranked by package strength and student interest.',
+                                  child: data.featuredCompanies.isEmpty
+                                      ? const _EmptyStateNote(
+                                          message:
+                                              'No top companies are available yet. Add recruiter job records to highlight campus visitors here.',
+                                        )
+                                      : LayoutBuilder(
+                                          builder: (context, constraints) {
+                                            final int columns = constraints.maxWidth > 980
+                                                ? 4
+                                                : constraints.maxWidth > 650
+                                                    ? 2
+                                                    : 1;
+                                            final double itemHeight = columns == 1
+                                                ? 170
+                                                : columns == 2
+                                                    ? 155
+                                                    : 145;
+                                            return _ResponsiveGrid(
+                                              columns: columns,
+                                              itemHeight: itemHeight,
+                                              children: data.featuredCompanies
+                                                  .asMap()
+                                                  .entries
+                                                  .map(
+                                                    (entry) =>
+                                                        _FeaturedCompanyCard(
+                                                      company: entry.value,
+                                                      rank: entry.key + 1,
+                                                    ),
+                                                  )
+                                                  .toList(growable: false),
+                                            );
+                                          },
+                                        ),
+                                ),
+                                const SizedBox(height: 24),
                                 Container(
                                   key: _recruitmentKey,
                                   child: _Section(
@@ -641,6 +681,100 @@ class _StepCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(body),
         ],
+      ),
+    );
+  }
+}
+
+class _FeaturedCompanyCard extends StatelessWidget {
+  const _FeaturedCompanyCard({
+    required this.company,
+    required this.rank,
+  });
+
+  final LandingCompanyItem company;
+  final int rank;
+
+  @override
+  Widget build(BuildContext context) {
+    final TextTheme textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFFF6EC), Color(0xFFFFE9D3)],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFFFD3AF)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14000000),
+            blurRadius: 18,
+            offset: Offset(0, 10),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFF7A3E00),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              'Top ${rank}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            company.company,
+            style: textTheme.titleLarge?.copyWith(
+              color: const Color(0xFF5A2D0C),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Highest package: ${company.highestPackageLpa} LPA',
+            style: textTheme.bodyMedium?.copyWith(
+              color: const Color(0xFFE65100),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyStateNote extends StatelessWidget {
+  const _EmptyStateNote({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF3E8),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Text(
+        message,
+        style: Theme.of(
+          context,
+        ).textTheme.bodyMedium?.copyWith(color: const Color(0xFF7A5A45)),
       ),
     );
   }
