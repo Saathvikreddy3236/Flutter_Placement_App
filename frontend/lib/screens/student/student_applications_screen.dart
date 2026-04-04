@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../models/api_models.dart';
 import '../../services/api_service.dart';
 import '../../services/session_store.dart';
+import '../../utils/app_notifier.dart';
+import '../../utils/formatters.dart';
 import '../../widgets/student_navbar.dart';
 import '../../widgets/student_section_shell.dart';
 
@@ -61,21 +63,20 @@ class _StudentApplicationsScreenState extends State<StudentApplicationsScreen> {
         decision: decision,
       );
       await _refresh();
-      _showMessage(message);
+      await AppNotifier.showSuccessMessage(
+        decision == 'accept' ? 'Offer Accepted' : 'Offer Rejected',
+        message,
+      );
     } catch (e) {
-      _showMessage(e.toString().replaceFirst('Exception: ', ''));
+      await AppNotifier.showErrorMessage(
+        'Update Failed',
+        e.toString().replaceFirst('Exception: ', ''),
+      );
     } finally {
       if (mounted) {
         setState(() => _busyApplicationIds.remove(application.id));
       }
     }
-  }
-
-  void _showMessage(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
-    );
   }
 
   @override
@@ -209,7 +210,7 @@ class _ApplicationCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Status: ${application.status} | ${application.location} | ${application.packageLpa} LPA',
+            'Status: ${application.status} | ${application.location} | ${application.packageLpa} LPA | Deadline ${AppFormatters.date(application.deadline)}',
           ),
           const SizedBox(height: 10),
           if (canRespond)

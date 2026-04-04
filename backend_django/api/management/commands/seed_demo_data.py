@@ -10,6 +10,7 @@ class Command(BaseCommand):
     help = "Seed demo students, jobs, applications, and bookmarks for the placement portal."
 
     def handle(self, *args, **options):
+        self._create_admin()
         jobs = self._create_jobs()
         students = self._create_students()
         self._create_applications(students, jobs)
@@ -24,7 +25,30 @@ class Command(BaseCommand):
                 f"{Bookmark.objects.count()} bookmarks."
             )
         )
+        self.stdout.write("Admin login: admin / admin123")
         self.stdout.write("Student login password for all demo students: demo123")
+
+    def _create_admin(self):
+        admin_user, created = User.objects.get_or_create(
+            username="admin",
+            defaults={
+                "first_name": "Placement",
+                "last_name": "Admin",
+                "email": "admin@campus.example.com",
+                "is_staff": True,
+                "is_superuser": True,
+            },
+        )
+
+        if not created:
+            admin_user.first_name = "Placement"
+            admin_user.last_name = "Admin"
+            admin_user.email = "admin@campus.example.com"
+            admin_user.is_staff = True
+            admin_user.is_superuser = True
+
+        admin_user.set_password("admin123")
+        admin_user.save()
 
     def _create_jobs(self):
         job_specs = [
@@ -75,6 +99,54 @@ class Command(BaseCommand):
                 "description": "Write test cases, automate regression suites, and improve release confidence.",
                 "package": 5,
                 "deadline": date.today() + timedelta(days=28),
+            },
+            {
+                "title": "Frontend Developer",
+                "company": "Freshworks",
+                "location": "Chennai",
+                "description": "Build polished web dashboards, work with APIs, and improve product usability.",
+                "package": 9,
+                "deadline": date.today() + timedelta(days=17),
+            },
+            {
+                "title": "AI/ML Engineer",
+                "company": "Cognizant",
+                "location": "Bengaluru",
+                "description": "Train ML pipelines, evaluate model performance, and support intelligent features.",
+                "package": 11,
+                "deadline": date.today() + timedelta(days=23),
+            },
+            {
+                "title": "DevOps Associate",
+                "company": "IBM",
+                "location": "Pune",
+                "description": "Maintain CI/CD pipelines, automate deployments, and support cloud environments.",
+                "package": 7,
+                "deadline": date.today() + timedelta(days=30),
+            },
+            {
+                "title": "Cybersecurity Analyst",
+                "company": "Deloitte",
+                "location": "Gurugram",
+                "description": "Monitor security alerts, investigate incidents, and support compliance workflows.",
+                "package": 8,
+                "deadline": date.today() + timedelta(days=21),
+            },
+            {
+                "title": "Product Support Engineer",
+                "company": "Capgemini",
+                "location": "Noida",
+                "description": "Handle product support cases, debug customer issues, and document fixes.",
+                "package": 6,
+                "deadline": date.today() + timedelta(days=19),
+            },
+            {
+                "title": "Mobile App Developer",
+                "company": "Paytm",
+                "location": "Bengaluru",
+                "description": "Develop mobile product features, optimize performance, and ship reliable builds.",
+                "package": 10,
+                "deadline": date.today() + timedelta(days=26),
             },
         ]
 
@@ -150,6 +222,46 @@ class Command(BaseCommand):
                 "cgpa": 8.2,
                 "year": 2025,
             },
+            {
+                "username": "akash",
+                "first_name": "Akash",
+                "last_name": "Singh",
+                "email": "akash.singh@example.com",
+                "phone": "9876500017",
+                "branch": "CSE",
+                "cgpa": 8.9,
+                "year": 2026,
+            },
+            {
+                "username": "divya",
+                "first_name": "Divya",
+                "last_name": "Menon",
+                "email": "divya.menon@example.com",
+                "phone": "9876500018",
+                "branch": "AIDS",
+                "cgpa": 9.0,
+                "year": 2025,
+            },
+            {
+                "username": "nithin",
+                "first_name": "Nithin",
+                "last_name": "Kumar",
+                "email": "nithin.kumar@example.com",
+                "phone": "9876500019",
+                "branch": "ECE",
+                "cgpa": 7.8,
+                "year": 2026,
+            },
+            {
+                "username": "pooja",
+                "first_name": "Pooja",
+                "last_name": "Joshi",
+                "email": "pooja.joshi@example.com",
+                "phone": "9876500020",
+                "branch": "IT",
+                "cgpa": 8.5,
+                "year": 2025,
+            },
         ]
 
         students = {}
@@ -194,6 +306,17 @@ class Command(BaseCommand):
             ("karthik", ("Wipro", "Data Analyst"), "Pending"),
             ("meera", ("Accenture", "QA Automation Engineer"), "Rejected"),
             ("meera", ("Infosys", "Software Engineer Intern"), "Pending"),
+            ("akash", ("IBM", "DevOps Associate"), "Offered"),
+            ("akash", ("Amazon", "Cloud Support Associate"), "Selected"),
+            ("akash", ("Freshworks", "Frontend Developer"), "Pending"),
+            ("divya", ("Cognizant", "AI/ML Engineer"), "Selected"),
+            ("divya", ("Zoho", "Backend Developer"), "Pending"),
+            ("divya", ("Paytm", "Mobile App Developer"), "Pending"),
+            ("nithin", ("Capgemini", "Product Support Engineer"), "Rejected"),
+            ("nithin", ("TCS", "Graduate Trainee Engineer"), "Pending"),
+            ("pooja", ("Freshworks", "Frontend Developer"), "Offered"),
+            ("pooja", ("Deloitte", "Cybersecurity Analyst"), "Pending"),
+            ("pooja", ("IBM", "DevOps Associate"), "Selected"),
         ]
 
         for username, job_key, status in application_specs:
@@ -210,6 +333,11 @@ class Command(BaseCommand):
             ("sneha", ("Infosys", "Software Engineer Intern")),
             ("karthik", ("Accenture", "QA Automation Engineer")),
             ("meera", ("TCS", "Graduate Trainee Engineer")),
+            ("rahul", ("Paytm", "Mobile App Developer")),
+            ("akash", ("Deloitte", "Cybersecurity Analyst")),
+            ("divya", ("Amazon", "Cloud Support Associate")),
+            ("nithin", ("IBM", "DevOps Associate")),
+            ("pooja", ("Cognizant", "AI/ML Engineer")),
         ]
 
         for username, job_key in bookmark_specs:

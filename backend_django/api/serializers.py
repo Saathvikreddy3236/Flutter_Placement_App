@@ -96,6 +96,18 @@ class BookmarkSerializer(serializers.ModelSerializer):
 
 
 class JobCreateSerializer(serializers.ModelSerializer):
+    def validate_package(self, value):
+        if value <= 0:
+            raise serializers.ValidationError('Package must be greater than 0.')
+        return value
+
+    def validate_deadline(self, value):
+        from django.utils import timezone
+
+        if value < timezone.localdate():
+            raise serializers.ValidationError('Deadline cannot be in the past.')
+        return value
+
     class Meta:
         model = Job
         fields = [

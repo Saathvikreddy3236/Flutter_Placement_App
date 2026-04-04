@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/api_models.dart';
 import '../../services/api_service.dart';
 import '../../services/session_store.dart';
+import '../../utils/formatters.dart';
 import '../../widgets/student_navbar.dart';
 import '../../widgets/student_section_shell.dart';
 
@@ -128,7 +129,10 @@ class _BookmarkCard extends StatelessWidget {
             children: [
               _BookmarkTag(icon: Icons.location_on_outlined, label: bookmark.location),
               _BookmarkTag(icon: Icons.payments_outlined, label: '${bookmark.packageLpa} LPA'),
-              _BookmarkTag(icon: Icons.event_outlined, label: 'Deadline ${bookmark.deadline}'),
+              _BookmarkTag(
+                icon: Icons.event_outlined,
+                label: 'Deadline ${AppFormatters.date(bookmark.deadline)}',
+              ),
             ],
           ),
         ],

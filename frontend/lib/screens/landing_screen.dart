@@ -51,9 +51,9 @@ class _LandingScreenState extends State<LandingScreen> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFFFF5EA), Color(0xFFFFFFFF)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFF4F7FB), Color(0xFFFFFFFF), Color(0xFFEEF3F9)],
           ),
         ),
         child: SafeArea(
@@ -79,7 +79,9 @@ class _LandingScreenState extends State<LandingScreen> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text('Failed to load landing page: ${snapshot.error}'),
+                              Text(
+                                'Failed to load landing page: ${snapshot.error}',
+                              ),
                               const SizedBox(height: 12),
                               FilledButton(
                                 onPressed: () {
@@ -112,7 +114,8 @@ class _LandingScreenState extends State<LandingScreen> {
                                 _HeroSection(
                                   data: data,
                                   onLoginTap: _goToLogin,
-                                  onViewOutcomesTap: () => _scrollToKey(_statsKey),
+                                  onViewOutcomesTap: () =>
+                                      _scrollToKey(_statsKey),
                                 ),
                                 const SizedBox(height: 28),
                                 Container(
@@ -123,34 +126,40 @@ class _LandingScreenState extends State<LandingScreen> {
                                         'Live metrics from the backend so the placement story stays current and transparent.',
                                     child: LayoutBuilder(
                                       builder: (context, constraints) {
-                                        final int columns = constraints.maxWidth > 980
+                                        final int columns =
+                                            constraints.maxWidth > 980
                                             ? 5
                                             : constraints.maxWidth > 640
-                                                ? 3
-                                                : 2;
+                                            ? 3
+                                            : 2;
 
                                         return _ResponsiveGrid(
                                           columns: columns,
                                           itemHeight: 148,
                                           children: [
                                             _StatCard(
-                                              value: '${data.outcomes.studentsPlaced}+',
+                                              value:
+                                                  '${data.outcomes.studentsPlaced}+',
                                               label: 'Students placed',
                                             ),
                                             _StatCard(
-                                              value: '${data.outcomes.placementRate}%',
+                                              value:
+                                                  '${data.outcomes.placementRate}%',
                                               label: 'Placement rate',
                                             ),
                                             _StatCard(
-                                              value: 'INR ${data.outcomes.highestPackageLpa} LPA',
+                                              value:
+                                                  'INR ${data.outcomes.highestPackageLpa} LPA',
                                               label: 'Highest package',
                                             ),
                                             _StatCard(
-                                              value: 'INR ${data.outcomes.averagePackageLpa.toStringAsFixed(1)} LPA',
+                                              value:
+                                                  'INR ${data.outcomes.averagePackageLpa.toStringAsFixed(1)} LPA',
                                               label: 'Average package',
                                             ),
                                             _StatCard(
-                                              value: '${data.outcomes.companiesVisited}+',
+                                              value:
+                                                  '${data.outcomes.companiesVisited}+',
                                               label: 'Companies visited',
                                             ),
                                           ],
@@ -171,16 +180,18 @@ class _LandingScreenState extends State<LandingScreen> {
                                         )
                                       : LayoutBuilder(
                                           builder: (context, constraints) {
-                                            final int columns = constraints.maxWidth > 980
+                                            final int columns =
+                                                constraints.maxWidth > 980
                                                 ? 4
                                                 : constraints.maxWidth > 650
-                                                    ? 2
-                                                    : 1;
-                                            final double itemHeight = columns == 1
+                                                ? 2
+                                                : 1;
+                                            final double itemHeight =
+                                                columns == 1
                                                 ? 170
                                                 : columns == 2
-                                                    ? 155
-                                                    : 145;
+                                                ? 155
+                                                : 145;
                                             return _ResponsiveGrid(
                                               columns: columns,
                                               itemHeight: itemHeight,
@@ -190,9 +201,9 @@ class _LandingScreenState extends State<LandingScreen> {
                                                   .map(
                                                     (entry) =>
                                                         _FeaturedCompanyCard(
-                                                      company: entry.value,
-                                                      rank: entry.key + 1,
-                                                    ),
+                                                          company: entry.value,
+                                                          rank: entry.key + 1,
+                                                        ),
                                                   )
                                                   .toList(growable: false),
                                             );
@@ -208,11 +219,12 @@ class _LandingScreenState extends State<LandingScreen> {
                                         'A structured journey that keeps students, recruiters, and the placement cell aligned.',
                                     child: LayoutBuilder(
                                       builder: (context, constraints) {
-                                        final int columns = constraints.maxWidth > 980
+                                        final int columns =
+                                            constraints.maxWidth > 980
                                             ? 3
                                             : constraints.maxWidth > 650
-                                                ? 2
-                                                : 1;
+                                            ? 2
+                                            : 1;
                                         return _ResponsiveGrid(
                                           columns: columns,
                                           itemHeight: 210,
@@ -264,9 +276,12 @@ class _LandingScreenState extends State<LandingScreen> {
                                 Container(
                                   key: _contactKey,
                                   child: LandingFooter(
-                                    onOutcomesTap: () => _scrollToKey(_statsKey),
-                                    onProcessTap: () => _scrollToKey(_recruitmentKey),
-                                    onContactTap: () => _scrollToKey(_contactKey),
+                                    onOutcomesTap: () =>
+                                        _scrollToKey(_statsKey),
+                                    onProcessTap: () =>
+                                        _scrollToKey(_recruitmentKey),
+                                    onContactTap: () =>
+                                        _scrollToKey(_contactKey),
                                     onStudentLoginTap: _goToLogin,
                                   ),
                                 ),
@@ -355,6 +370,14 @@ class _HeroText extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFD8E2EE)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x120D2340),
+            blurRadius: 18,
+            offset: Offset(0, 10),
+          ),
+        ],
       ),
       padding: const EdgeInsets.all(22),
       child: Column(
@@ -362,15 +385,15 @@ class _HeroText extends StatelessWidget {
         children: [
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFFFFE4CC),
+              color: const Color(0xFFEAF1F8),
               borderRadius: BorderRadius.circular(999),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Text(
               'NIT AP Placement Cell',
               style: textTheme.labelLarge?.copyWith(
-                color: const Color(0xFFE65100),
-                fontWeight: FontWeight.w600,
+                color: const Color(0xFF12355B),
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
@@ -386,7 +409,7 @@ class _HeroText extends StatelessWidget {
           Text(
             'From applications to offers, the portal keeps every placement milestone in one modern workspace.',
             style: textTheme.bodyLarge?.copyWith(
-              color: const Color(0xFF7A5A45),
+              color: const Color(0xFF526174),
             ),
           ),
           const SizedBox(height: 16),
@@ -434,9 +457,16 @@ class _HeroCard extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFFF57C00), Color(0xFFFF9800)],
+          colors: [Color(0xFF12355B), Color(0xFF1A4975), Color(0xFFB98930)],
         ),
         borderRadius: BorderRadius.circular(18),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x180D2340),
+            blurRadius: 20,
+            offset: Offset(0, 10),
+          ),
+        ],
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -477,9 +507,15 @@ class _HeroCard extends StatelessWidget {
             columns: 2,
             itemHeight: 88,
             children: [
-              _HeroMetric(value: '${hero.upcomingDrives}+', label: 'Upcoming drives'),
+              _HeroMetric(
+                value: '${hero.upcomingDrives}+',
+                label: 'Upcoming drives',
+              ),
               _HeroMetric(value: '${hero.activeRoles}', label: 'Active roles'),
-              _HeroMetric(value: '${hero.interviewSlots}', label: 'Interview slots'),
+              _HeroMetric(
+                value: '${hero.interviewSlots}',
+                label: 'Interview slots',
+              ),
               _HeroMetric(value: '${hero.offerCalls}', label: 'Offer calls'),
             ],
           ),
@@ -535,7 +571,7 @@ class _MetaTag extends StatelessWidget {
     return Text(
       text,
       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-        color: const Color(0xFF6E4B2E),
+        color: const Color(0xFF5A6D82),
         fontWeight: FontWeight.w500,
       ),
     );
@@ -561,6 +597,14 @@ class _Section extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFD8E2EE)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x100D2340),
+            blurRadius: 18,
+            offset: Offset(0, 10),
+          ),
+        ],
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -571,7 +615,7 @@ class _Section extends StatelessWidget {
           Text(
             subtitle,
             style: textTheme.bodyMedium?.copyWith(
-              color: const Color(0xFF7A5A45),
+              color: const Color(0xFF607284),
             ),
           ),
           const SizedBox(height: 14),
@@ -622,8 +666,9 @@ class _StatCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3E8),
+        color: const Color(0xFFF8FBFF),
         borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFDCE6F2)),
       ),
       padding: const EdgeInsets.all(14),
       child: Column(
@@ -632,7 +677,7 @@ class _StatCard extends StatelessWidget {
           Text(
             value,
             style: textTheme.titleLarge?.copyWith(
-              color: const Color(0xFFE65100),
+              color: const Color(0xFF12355B),
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -659,8 +704,9 @@ class _StepCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3E8),
+        color: const Color(0xFFF8FBFF),
         borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFDCE6F2)),
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -668,15 +714,15 @@ class _StepCard extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 14,
-            backgroundColor: const Color(0xFFE65100),
+            backgroundColor: const Color(0xFF12355B),
             child: Text('$index', style: const TextStyle(color: Colors.white)),
           ),
           const SizedBox(height: 10),
           Text(
             title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           Text(body),
@@ -687,10 +733,7 @@ class _StepCard extends StatelessWidget {
 }
 
 class _FeaturedCompanyCard extends StatelessWidget {
-  const _FeaturedCompanyCard({
-    required this.company,
-    required this.rank,
-  });
+  const _FeaturedCompanyCard({required this.company, required this.rank});
 
   final LandingCompanyItem company;
   final int rank;
@@ -704,13 +747,13 @@ class _FeaturedCompanyCard extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFFFFF6EC), Color(0xFFFFE9D3)],
+          colors: [Color(0xFFFFFFFF), Color(0xFFF4F7FB)],
         ),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFFFD3AF)),
+        border: Border.all(color: const Color(0xFFD6E1ED)),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x14000000),
+            color: Color(0x120D2340),
             blurRadius: 18,
             offset: Offset(0, 10),
           ),
@@ -723,11 +766,11 @@ class _FeaturedCompanyCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFF7A3E00),
+              color: const Color(0xFF12355B),
               borderRadius: BorderRadius.circular(999),
             ),
             child: Text(
-              'Top ${rank}',
+              'Top $rank',
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w700,
@@ -738,7 +781,7 @@ class _FeaturedCompanyCard extends StatelessWidget {
           Text(
             company.company,
             style: textTheme.titleLarge?.copyWith(
-              color: const Color(0xFF5A2D0C),
+              color: const Color(0xFF142133),
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -746,7 +789,7 @@ class _FeaturedCompanyCard extends StatelessWidget {
           Text(
             'Highest package: ${company.highestPackageLpa} LPA',
             style: textTheme.bodyMedium?.copyWith(
-              color: const Color(0xFFE65100),
+              color: const Color(0xFFB98930),
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -766,15 +809,16 @@ class _EmptyStateNote extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3E8),
+        color: const Color(0xFFF8FBFF),
         borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFDCE6F2)),
       ),
       padding: const EdgeInsets.all(16),
       child: Text(
         message,
         style: Theme.of(
           context,
-        ).textTheme.bodyMedium?.copyWith(color: const Color(0xFF7A5A45)),
+        ).textTheme.bodyMedium?.copyWith(color: const Color(0xFF607284)),
       ),
     );
   }

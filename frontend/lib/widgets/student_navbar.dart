@@ -29,7 +29,7 @@ class StudentNavbar extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFFFE6D2))),
+        border: Border(bottom: BorderSide(color: Color(0xFFD9E3EF))),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: LayoutBuilder(
@@ -105,15 +105,15 @@ class _BrandCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFD8B0),
+          color: const Color(0xFF12355B),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE7984E)),
+          border: Border.all(color: const Color(0xFF12355B)),
         ),
         child: const Text.rich(
           TextSpan(
             text: 'Placement Portal\n',
             style: TextStyle(
-              color: Color(0xFFB24B00),
+              color: Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.w700,
               height: 1.2,
@@ -122,7 +122,7 @@ class _BrandCard extends StatelessWidget {
               TextSpan(
                 text: 'NIT AP',
                 style: TextStyle(
-                  color: Color(0xFFE27B19),
+                  color: Color(0xFFD7E3F0),
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -154,16 +154,16 @@ class _NavChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
         decoration: BoxDecoration(
-          color: active ? const Color(0xFFFFE1C5) : const Color(0xFFFFFAF5),
+          color: active ? const Color(0xFFEAF1F8) : const Color(0xFFFFFFFF),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: active ? const Color(0xFFE9A66A) : const Color(0xFFFFE4CE),
+            color: active ? const Color(0xFF9FB7D2) : const Color(0xFFD8E2ED),
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: active ? const Color(0xFF934400) : const Color(0xFF7A5A45),
+            color: active ? const Color(0xFF12355B) : const Color(0xFF435365),
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -190,7 +190,7 @@ class _ProfileCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFFE4CE)),
+        border: Border.all(color: const Color(0xFFD9E3EF)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -203,14 +203,14 @@ class _ProfileCard extends StatelessWidget {
               children: [
                 const Icon(
                   Icons.account_circle,
-                  color: Color(0xFFC75A00),
+                  color: Color(0xFF12355B),
                   size: 27,
                 ),
                 const SizedBox(width: 8),
                 Text(
                   studentName,
                   style: const TextStyle(
-                    color: Color(0xFF4B2D18),
+                    color: Color(0xFF24374E),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -221,7 +221,7 @@ class _ProfileCard extends StatelessWidget {
           IconButton(
             onPressed: onLogout,
             tooltip: 'Logout',
-            icon: const Icon(Icons.logout, color: Color(0xFF934400), size: 20),
+            icon: const Icon(Icons.logout, color: Color(0xFF12355B), size: 20),
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             padding: EdgeInsets.zero,
           ),

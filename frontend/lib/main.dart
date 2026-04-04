@@ -10,9 +10,13 @@ import 'screens/student/student_applications_screen.dart';
 import 'screens/student/student_bookmarks_screen.dart';
 import 'screens/student/student_dashboard_screen.dart';
 import 'screens/student/student_jobs_screen.dart';
+import 'services/session_store.dart';
 import 'theme/app_theme.dart';
+import 'utils/app_notifier.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await SessionStore.initialize();
   runApp(const PlacementPortalApp());
 }
 
@@ -22,10 +26,13 @@ class PlacementPortalApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: AppNotifier.navigatorKey,
+      scaffoldMessengerKey: AppNotifier.messengerKey,
       debugShowCheckedModeBanner: false,
       title: 'Placement Portal NIT AP',
       theme: AppTheme.light,
-      initialRoute: LandingScreen.routeName,
+      initialRoute: SessionStore.initialRoute,
+      navigatorObservers: <NavigatorObserver>[_SessionRouteObserver()],
       routes: <String, WidgetBuilder>{
         LandingScreen.routeName: (_) => const LandingScreen(),
         LoginScreen.routeName: (_) => const LoginScreen(),
@@ -40,5 +47,30 @@ class PlacementPortalApp extends StatelessWidget {
         AdminAnalyticsScreen.routeName: (_) => const AdminAnalyticsScreen(),
       },
     );
+  }
+}
+
+class _SessionRouteObserver extends NavigatorObserver {
+  void _remember(Route<dynamic>? route) {
+    final String? routeName = route?.settings.name;
+    SessionStore.rememberRoute(routeName);
+  }
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPush(route, previousRoute);
+    _remember(route);
+  }
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
+    super.didReplace(newRoute: newRoute, oldRoute: oldRoute);
+    _remember(newRoute);
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPop(route, previousRoute);
+    _remember(previousRoute);
   }
 }

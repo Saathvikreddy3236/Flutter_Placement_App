@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
+import tempfile
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -75,17 +77,29 @@ WSGI_APPLICATION = 'backend_django.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        # postgresql://postgres:postgres@localhost:5432/postgres
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'flutter',
-        'USER': 'flutter',
-        'PASSWORD': '2006',
-        'HOST': 'localhost',
-        'PORT': 5432,
+POSTGRES_DB = os.environ.get('POSTGRES_DB')
+if POSTGRES_DB:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': POSTGRES_DB,
+            'USER': os.environ.get('POSTGRES_USER', 'postgres'),
+            'PASSWORD': os.environ.get('POSTGRES_PASSWORD', ''),
+            'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),
+            'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+        }
     }
-}
+else:
+    sqlite_path = os.environ.get(
+        'SQLITE_PATH',
+        os.path.join(tempfile.gettempdir(), 'flutter_project_mobile_db.sqlite3'),
+    )
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': sqlite_path,
+        }
+    }
 
 
 # Password validation

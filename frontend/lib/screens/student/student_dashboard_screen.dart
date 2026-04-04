@@ -51,9 +51,9 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
         body: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFFFFF4E7), Color(0xFFFFFCF8)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFF4F7FB), Color(0xFFFFFFFF), Color(0xFFEEF3F9)],
             ),
           ),
           child: SafeArea(
@@ -243,7 +243,14 @@ class _HeroText extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFFFDFC7)),
+        border: Border.all(color: const Color(0xFFD8E2EE)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x120D2340),
+            blurRadius: 18,
+            offset: Offset(0, 10),
+          ),
+        ],
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -252,13 +259,13 @@ class _HeroText extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFE9D6),
+              color: const Color(0xFFEAF1F8),
               borderRadius: BorderRadius.circular(999),
             ),
             child: const Text(
               'Student Hub',
               style: TextStyle(
-                color: Color(0xFF8E3D00),
+                color: Color(0xFF12355B),
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -309,9 +316,16 @@ class _CongratulationsBanner extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFFC75A00), Color(0xFFE79A45)],
+          colors: [Color(0xFF12355B), Color(0xFF1A4975), Color(0xFFB98930)],
         ),
         borderRadius: BorderRadius.circular(18),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x180D2340),
+            blurRadius: 20,
+            offset: Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -356,9 +370,16 @@ class _ProfileCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFFC75A00), Color(0xFFE48A2E)],
+          colors: [Color(0xFF12355B), Color(0xFF1B4D7A)],
         ),
         borderRadius: BorderRadius.circular(18),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x180D2340),
+            blurRadius: 20,
+            offset: Offset(0, 10),
+          ),
+        ],
       ),
       padding: const EdgeInsets.all(18),
       child: Column(
@@ -370,7 +391,7 @@ class _ProfileCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            '${profile.branch} | Year ${profile.year}',
+            '${profile.branch} | Graduation ${profile.graduationYear == 0 ? profile.year : profile.graduationYear}',
             style: textTheme.bodyMedium?.copyWith(color: const Color(0xFFFFEEDA)),
           ),
           const SizedBox(height: 8),
@@ -500,7 +521,14 @@ class _Panel extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFFFE1CA)),
+        border: Border.all(color: const Color(0xFFD8E2EE)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x100D2340),
+            blurRadius: 18,
+            offset: Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -531,13 +559,13 @@ class _ListTileCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFAF5),
+        color: const Color(0xFFF8FBFF),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFFFE8D7)),
+        border: Border.all(color: const Color(0xFFDCE6F2)),
       ),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFFC75A00)),
+          Icon(icon, color: const Color(0xFF12355B)),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -566,9 +594,9 @@ class _EmptyNote extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFAF5),
+        color: const Color(0xFFF8FBFF),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFFFE8D7)),
+        border: Border.all(color: const Color(0xFFDCE6F2)),
       ),
       child: Text(text),
     );
@@ -618,13 +646,13 @@ class _SectionHeader extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFEAD7),
+            color: const Color(0xFFEAF1F8),
             borderRadius: BorderRadius.circular(999),
           ),
           child: Text(
             tag,
             style: const TextStyle(
-              color: Color(0xFF8C4100),
+              color: Color(0xFF12355B),
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -685,7 +713,7 @@ class _OverviewCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFFFE1CA)),
+        border: Border.all(color: const Color(0xFFD8E2EE)),
       ),
       padding: const EdgeInsets.all(14),
       child: Column(
@@ -696,14 +724,14 @@ class _OverviewCard extends StatelessWidget {
           Text(
             count,
             style: textTheme.headlineSmall?.copyWith(
-              color: const Color(0xFFC75A00),
+              color: const Color(0xFF12355B),
             ),
           ),
           const Spacer(),
           if (showDot)
             const Row(
               children: [
-                CircleAvatar(radius: 4, backgroundColor: Color(0xFFC75A00)),
+                CircleAvatar(radius: 4, backgroundColor: Color(0xFF12355B)),
                 SizedBox(width: 6),
                 Text('Shortlist active'),
               ],
@@ -713,7 +741,7 @@ class _OverviewCard extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 10,
-                  backgroundColor: Color(0xFFE9A86E),
+                  backgroundColor: Color(0xFFB98930),
                   child: Text(
                     'OK',
                     style: TextStyle(fontSize: 9, color: Colors.white),

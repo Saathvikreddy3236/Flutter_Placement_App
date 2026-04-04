@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/api_models.dart';
 import '../services/api_service.dart';
 import '../services/session_store.dart';
+import '../utils/app_notifier.dart';
 
 Future<void> showProfileDialog(BuildContext context) async {
   await showDialog<void>(
@@ -26,7 +27,7 @@ class _ProfileDialogState extends State<_ProfileDialog> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _branchController = TextEditingController();
   final TextEditingController _cgpaController = TextEditingController();
-  final TextEditingController _yearController = TextEditingController();
+  int? _selectedGraduationYear;
 
   late Future<UserProfileItem> _profileFuture;
   bool _saving = false;
@@ -48,8 +49,12 @@ class _ProfileDialogState extends State<_ProfileDialog> {
     _phoneController.dispose();
     _branchController.dispose();
     _cgpaController.dispose();
-    _yearController.dispose();
     super.dispose();
+  }
+
+  List<int> get _graduationYearOptions {
+    final int currentYear = DateTime.now().year;
+    return List<int>.generate(5, (index) => currentYear + index);
   }
 
   void _fill(UserProfileItem profile) {
@@ -59,7 +64,14 @@ class _ProfileDialogState extends State<_ProfileDialog> {
     _phoneController.text = profile.phone;
     _branchController.text = profile.branch;
     _cgpaController.text = profile.cgpa == 0 ? '' : profile.cgpa.toString();
-    _yearController.text = profile.year == 0 ? '' : '${profile.year}';
+    final int initialYear = profile.graduationYear != 0
+        ? profile.graduationYear
+        : profile.year;
+    if (_graduationYearOptions.contains(initialYear)) {
+      _selectedGraduationYear = initialYear;
+    } else {
+      _selectedGraduationYear = _graduationYearOptions.first;
+    }
   }
 
   Future<void> _save(UserProfileItem profile) async {
@@ -75,21 +87,35 @@ class _ProfileDialogState extends State<_ProfileDialog> {
         phone: _phoneController.text.trim(),
         branch: _branchController.text.trim(),
         cgpa: double.tryParse(_cgpaController.text.trim()),
-        year: int.tryParse(_yearController.text.trim()),
+        year: _selectedGraduationYear,
       );
       SessionStore.updateProfile(
         name: updated.name.isEmpty ? updated.username : updated.name,
         usernameValue: updated.username,
         emailValue: updated.email,
       );
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
+      await AppNotifier.showSuccessMessage(
+        'Profile Updated',
+        'Your profile details have been saved successfully.',
+      );
+      if (!mounted) {
+        return;
+      }
       Navigator.of(context).pop();
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      if (!mounted) {
+        return;
+      }
+      await AppNotifier.showErrorMessage(
+        'Update Failed',
+        e.toString().replaceFirst('Exception: ', ''),
       );
-      setState(() => _saving = false);
+      if (mounted) {
+        setState(() => _saving = false);
+      }
     }
   }
 
@@ -147,24 +173,46 @@ class _ProfileDialogState extends State<_ProfileDialog> {
                         decoration: const InputDecoration(labelText: 'Name'),
                         validator: (value) =>
                             value == null || value.trim().isEmpty
-                                ? 'Enter name'
-                                : null,
+                            ? 'Enter name'
+                            : null,
                       ),
                       const SizedBox(height: 10),
                       TextFormField(
                         controller: _emailController,
                         decoration: const InputDecoration(labelText: 'Email'),
+                        validator: (value) {
+                          final String trimmed = (value ?? '').trim();
+                          if (trimmed.isEmpty) {
+                            return 'Enter email';
+                          }
+                          if (!trimmed.contains('@')) {
+                            return 'Enter valid email';
+                          }
+                          return null;
+                        },
                       ),
                       if (profile.isStudent) ...[
                         const SizedBox(height: 10),
                         TextFormField(
                           controller: _phoneController,
                           decoration: const InputDecoration(labelText: 'Phone'),
+                          validator: (value) {
+                            final String trimmed = (value ?? '').trim();
+                            if (trimmed.isEmpty) {
+                              return 'Enter phone number';
+                            }
+                            if (trimmed.length < 10) {
+                              return 'Enter valid phone number';
+                            }
+                            return null;
+                          },
                         ),
                         const SizedBox(height: 10),
                         TextFormField(
                           controller: _branchController,
-                          decoration: const InputDecoration(labelText: 'Branch'),
+                          decoration: const InputDecoration(
+                            labelText: 'Branch',
+                          ),
                         ),
                         const SizedBox(height: 10),
                         TextFormField(
@@ -173,20 +221,47 @@ class _ProfileDialogState extends State<_ProfileDialog> {
                             decimal: true,
                           ),
                           decoration: const InputDecoration(labelText: 'CGPA'),
-                          validator: (value) =>
-                              double.tryParse((value ?? '').trim()) == null
-                                  ? 'Enter valid CGPA'
-                                  : null,
+                          validator: (value) => () {
+                            final double? cgpa = double.tryParse(
+                              (value ?? '').trim(),
+                            );
+                            if (cgpa == null) {
+                              return 'Enter valid CGPA';
+                            }
+                            if (cgpa < 0 || cgpa > 10) {
+                              return 'CGPA must be between 0 and 10';
+                            }
+                            return null;
+                          }(),
                         ),
                         const SizedBox(height: 10),
-                        TextFormField(
-                          controller: _yearController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(labelText: 'Year'),
-                          validator: (value) =>
-                              int.tryParse((value ?? '').trim()) == null
-                                  ? 'Enter valid year'
-                                  : null,
+                        DropdownButtonFormField<int>(
+                          initialValue: _selectedGraduationYear,
+                          decoration: const InputDecoration(
+                            labelText: 'Graduation Year',
+                          ),
+                          items: _graduationYearOptions
+                              .map(
+                                (year) => DropdownMenuItem<int>(
+                                  value: year,
+                                  child: Text('$year'),
+                                ),
+                              )
+                              .toList(growable: false),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedGraduationYear = value;
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null) {
+                              return 'Select graduation year';
+                            }
+                            if (!_graduationYearOptions.contains(value)) {
+                              return 'Select a valid graduation year';
+                            }
+                            return null;
+                          },
                         ),
                       ],
                       const SizedBox(height: 16),

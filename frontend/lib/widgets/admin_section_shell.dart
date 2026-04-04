@@ -25,11 +25,14 @@ class AdminSectionShell extends StatelessWidget {
     return LogoutBackGuard(
       child: Scaffold(
         body: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFFFFF4E7), Color(0xFFFFFCF8)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+                const Color(0xFFFFFFFF),
+              ],
             ),
           ),
           child: SafeArea(
@@ -69,7 +72,7 @@ class AdminSectionShell extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFFFFE1CA)),
+                          border: Border.all(color: const Color(0xFFD9E3EF)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,7 +125,7 @@ class AdminInfoCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFFE1CA)),
+        border: Border.all(color: const Color(0xFFD9E3EF)),
       ),
       child: Row(
         children: [

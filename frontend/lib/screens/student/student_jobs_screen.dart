@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../models/api_models.dart';
 import '../../services/api_service.dart';
 import '../../services/session_store.dart';
+import '../../utils/app_notifier.dart';
+import '../../utils/formatters.dart';
 import '../../widgets/student_navbar.dart';
 import '../../widgets/student_section_shell.dart';
 
@@ -17,6 +19,7 @@ class StudentJobsScreen extends StatefulWidget {
 
 class _StudentJobsScreenState extends State<StudentJobsScreen> {
   final ApiService _api = const ApiService();
+  final TextEditingController _searchController = TextEditingController();
   late Future<List<JobItem>> _jobsFuture;
   final Set<int> _busyApplyJobs = <int>{};
   final Set<int> _busyBookmarkJobs = <int>{};
@@ -27,6 +30,12 @@ class _StudentJobsScreenState extends State<StudentJobsScreen> {
   void initState() {
     super.initState();
     _jobsFuture = _loadJobs();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<List<JobItem>> _loadJobs() async {
@@ -73,13 +82,13 @@ class _StudentJobsScreenState extends State<StudentJobsScreen> {
         jobId: job.id,
       );
       _replaceJob(job.copyWith(isApplied: true));
-      _showMessage(message);
+      await AppNotifier.showSuccessMessage('Application Submitted', message);
     } catch (e) {
       final String message = e.toString().replaceFirst('Exception: ', '');
       if (message == 'Already applied') {
         _replaceJob(job.copyWith(isApplied: true));
       }
-      _showMessage(message);
+      await AppNotifier.showErrorMessage('Unable To Apply', message);
     } finally {
       if (mounted) {
         setState(() => _busyApplyJobs.remove(job.id));
@@ -100,9 +109,17 @@ class _StudentJobsScreenState extends State<StudentJobsScreen> {
         jobId: job.id,
       );
       _replaceJob(job.copyWith(isBookmarked: bookmarked));
-      _showMessage(bookmarked ? 'Job bookmarked' : 'Bookmark removed');
+      await AppNotifier.showInfoMessage(
+        bookmarked ? 'Bookmark Added' : 'Bookmark Removed',
+        bookmarked
+            ? 'The job has been saved to your bookmarks.'
+            : 'The job has been removed from your bookmarks.',
+      );
     } catch (e) {
-      _showMessage(e.toString().replaceFirst('Exception: ', ''));
+      await AppNotifier.showErrorMessage(
+        'Bookmark Update Failed',
+        e.toString().replaceFirst('Exception: ', ''),
+      );
     } finally {
       if (mounted) {
         setState(() => _busyBookmarkJobs.remove(job.id));
@@ -119,11 +136,15 @@ class _StudentJobsScreenState extends State<StudentJobsScreen> {
     });
   }
 
-  void _showMessage(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
-    );
+  List<JobItem> _filteredJobs() {
+    final String query = _searchController.text.trim().toLowerCase();
+    if (query.isEmpty) {
+      return _jobs;
+    }
+    return _jobs.where((job) {
+      return job.title.toLowerCase().contains(query) ||
+          job.company.toLowerCase().contains(query);
+    }).toList(growable: false);
   }
 
   @override
@@ -176,7 +197,25 @@ class _StudentJobsScreenState extends State<StudentJobsScreen> {
                     'You have accepted an offer, so new applications are now disabled.',
                   ),
                 ),
-              for (final JobItem job in _jobs) ...[
+              _JobsSearchField(
+                controller: _searchController,
+                onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(height: 12),
+              if (_filteredJobs().isEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFFFE2CB)),
+                  ),
+                  child: const Text(
+                    'No jobs match your search. Try a company name or job title.',
+                  ),
+                ),
+              for (final JobItem job in _filteredJobs()) ...[
                 _JobCard(
                   job: job,
                   isApplying: _busyApplyJobs.contains(job.id),
@@ -190,6 +229,43 @@ class _StudentJobsScreenState extends State<StudentJobsScreen> {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _JobsSearchField extends StatelessWidget {
+  const _JobsSearchField({required this.controller, required this.onChanged});
+
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFFE2CB)),
+      ),
+      child: TextField(
+        controller: controller,
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          hintText: 'Search by company or position',
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: controller.text.isEmpty
+              ? null
+              : IconButton(
+                  onPressed: () {
+                    controller.clear();
+                    onChanged('');
+                  },
+                  icon: const Icon(Icons.close),
+                ),
+        ),
       ),
     );
   }
@@ -266,7 +342,7 @@ class _JobCard extends StatelessWidget {
                 icon: Icons.payments_outlined,
               ),
               _MetaChip(
-                label: 'Deadline ${job.deadline}',
+                label: 'Deadline ${AppFormatters.date(job.deadline)}',
                 icon: Icons.event_outlined,
               ),
             ],
@@ -277,15 +353,17 @@ class _JobCard extends StatelessWidget {
           Row(
             children: [
               FilledButton(
-                onPressed: job.isApplied || isApplying || applicationsLocked ? null : onApply,
+                onPressed: job.isApplied || isApplying || applicationsLocked
+                    ? null
+                    : onApply,
                 child: Text(
                   job.isApplied
                       ? 'Applied'
                       : applicationsLocked
-                          ? 'Locked'
-                          : isApplying
-                              ? 'Applying...'
-                              : 'Apply Now',
+                      ? 'Locked'
+                      : isApplying
+                      ? 'Applying...'
+                      : 'Apply Now',
                 ),
               ),
               const SizedBox(width: 10),
@@ -303,10 +381,7 @@ class _JobCard extends StatelessWidget {
 }
 
 class _MetaChip extends StatelessWidget {
-  const _MetaChip({
-    required this.label,
-    required this.icon,
-  });
+  const _MetaChip({required this.label, required this.icon});
 
   final String label;
   final IconData icon;

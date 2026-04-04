@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/api_models.dart';
 import '../../services/api_service.dart';
+import '../../utils/app_notifier.dart';
 import '../../widgets/admin_navbar.dart';
 import '../../widgets/admin_section_shell.dart';
 
@@ -48,18 +49,19 @@ class _AdminApplicantsScreenState extends State<AdminApplicantsScreen> {
   }
 
   Future<void> _openProfile(AdminApplicantItem applicant) async {
-    final AdminApplicantItem? updatedApplicant = await showDialog<AdminApplicantItem>(
-      context: context,
-      builder: (context) => _ApplicantProfileDialog(
-        applicationId: applicant.id,
-        api: _api,
-      ),
-    );
+    final AdminApplicantItem? updatedApplicant =
+        await showDialog<AdminApplicantItem>(
+          context: context,
+          builder: (context) =>
+              _ApplicantProfileDialog(applicationId: applicant.id, api: _api),
+        );
 
     if (updatedApplicant == null || !mounted) return;
     setState(() {
       _applicants = _applicants
-          .map((item) => item.id == updatedApplicant.id ? updatedApplicant : item)
+          .map(
+            (item) => item.id == updatedApplicant.id ? updatedApplicant : item,
+          )
           .toList(growable: false);
     });
   }
@@ -69,7 +71,8 @@ class _AdminApplicantsScreenState extends State<AdminApplicantsScreen> {
     return AdminSectionShell(
       activeTab: AdminNavTab.applicants,
       title: 'View Applicants',
-      subtitle: 'Search applicants by student name or company, open their profile, and update the result status.',
+      subtitle:
+          'Search applicants by student name or company, open their profile, and update the result status.',
       child: Column(
         children: [
           Row(
@@ -92,7 +95,8 @@ class _AdminApplicantsScreenState extends State<AdminApplicantsScreen> {
           FutureBuilder<List<AdminApplicantItem>>(
             future: _applicantsFuture,
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting && _applicants.isEmpty) {
+              if (snapshot.connectionState == ConnectionState.waiting &&
+                  _applicants.isEmpty) {
                 return const Padding(
                   padding: EdgeInsets.all(20),
                   child: CircularProgressIndicator(),
@@ -104,14 +108,18 @@ class _AdminApplicantsScreenState extends State<AdminApplicantsScreen> {
                   children: [
                     Text('Failed to load applicants: ${snapshot.error}'),
                     const SizedBox(height: 8),
-                    OutlinedButton(onPressed: _search, child: const Text('Retry')),
+                    OutlinedButton(
+                      onPressed: _search,
+                      child: const Text('Retry'),
+                    ),
                   ],
                 );
               }
               if (_applicants.isEmpty) {
                 return const AdminInfoCard(
                   title: 'No applicants found',
-                  detail: 'Try another search term or wait for students to apply.',
+                  detail:
+                      'Try another search term or wait for students to apply.',
                 );
               }
               return Column(
@@ -119,7 +127,8 @@ class _AdminApplicantsScreenState extends State<AdminApplicantsScreen> {
                   for (final AdminApplicantItem applicant in _applicants) ...[
                     AdminInfoCard(
                       title: '${applicant.studentName} - ${applicant.jobTitle}',
-                      detail: '${applicant.company} | ${applicant.branch} | ${applicant.status}',
+                      detail:
+                          '${applicant.company} | ${applicant.branch} | ${applicant.status}',
                       actionLabel: 'View Profile',
                       onActionTap: () => _openProfile(applicant),
                     ),
@@ -145,7 +154,8 @@ class _ApplicantProfileDialog extends StatefulWidget {
   final ApiService api;
 
   @override
-  State<_ApplicantProfileDialog> createState() => _ApplicantProfileDialogState();
+  State<_ApplicantProfileDialog> createState() =>
+      _ApplicantProfileDialogState();
 }
 
 class _ApplicantProfileDialogState extends State<_ApplicantProfileDialog> {
@@ -156,29 +166,41 @@ class _ApplicantProfileDialogState extends State<_ApplicantProfileDialog> {
   @override
   void initState() {
     super.initState();
-    _detailFuture = widget.api.fetchAdminApplicationDetail(widget.applicationId);
+    _detailFuture = widget.api.fetchAdminApplicationDetail(
+      widget.applicationId,
+    );
   }
 
   Future<void> _save(AdminApplicationDetail detail) async {
-    if (_selectedStatus == null || _selectedStatus == detail.application.status) {
+    if (_selectedStatus == null ||
+        _selectedStatus == detail.application.status) {
       Navigator.of(context).pop();
       return;
     }
 
     setState(() => _saving = true);
     try {
-      final AdminApplicantItem updated = await widget.api.updateApplicationStatus(
-        applicationId: widget.applicationId,
-        status: _selectedStatus!,
+      final AdminApplicantItem updated = await widget.api
+          .updateApplicationStatus(
+            applicationId: widget.applicationId,
+            status: _selectedStatus!,
+          );
+      if (!mounted) return;
+      await AppNotifier.showSuccessMessage(
+        'Status Updated',
+        'The application status has been updated successfully.',
       );
       if (!mounted) return;
       Navigator.of(context).pop(updated);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      await AppNotifier.showErrorMessage(
+        'Update Failed',
+        e.toString().replaceFirst('Exception: ', ''),
       );
-      setState(() => _saving = false);
+      if (mounted) {
+        setState(() => _saving = false);
+      }
     }
   }
 
@@ -224,20 +246,36 @@ class _ApplicantProfileDialogState extends State<_ApplicantProfileDialog> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(detail.application.studentName, style: Theme.of(context).textTheme.headlineSmall),
+                    Text(
+                      detail.application.studentName,
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
                     const SizedBox(height: 6),
-                    Text('${detail.application.company} - ${detail.application.jobTitle}'),
+                    Text(
+                      '${detail.application.company} - ${detail.application.jobTitle}',
+                    ),
                     const SizedBox(height: 14),
                     _ProfileLine(label: 'Email', value: detail.profile.email),
                     _ProfileLine(label: 'Phone', value: detail.profile.phone),
                     _ProfileLine(label: 'Branch', value: detail.profile.branch),
-                    _ProfileLine(label: 'Year', value: '${detail.profile.year}'),
-                    _ProfileLine(label: 'CGPA', value: detail.profile.cgpa.toStringAsFixed(2)),
-                    _ProfileLine(label: 'Graduation Year', value: '${detail.profile.graduationYear}'),
+                    _ProfileLine(
+                      label: 'Year',
+                      value: '${detail.profile.year}',
+                    ),
+                    _ProfileLine(
+                      label: 'CGPA',
+                      value: detail.profile.cgpa.toStringAsFixed(2),
+                    ),
+                    _ProfileLine(
+                      label: 'Graduation Year',
+                      value: '${detail.profile.graduationYear}',
+                    ),
                     const SizedBox(height: 14),
                     DropdownButtonFormField<String>(
-                      value: _selectedStatus,
-                      decoration: const InputDecoration(labelText: 'Application Status'),
+                      initialValue: _selectedStatus,
+                      decoration: const InputDecoration(
+                        labelText: 'Application Status',
+                      ),
                       items: detail.statusChoices
                           .map(
                             (status) => DropdownMenuItem<String>(
@@ -259,7 +297,9 @@ class _ApplicantProfileDialogState extends State<_ApplicantProfileDialog> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         OutlinedButton(
-                          onPressed: _saving ? null : () => Navigator.of(context).pop(),
+                          onPressed: _saving
+                              ? null
+                              : () => Navigator.of(context).pop(),
                           child: const Text('Close'),
                         ),
                         const SizedBox(width: 10),

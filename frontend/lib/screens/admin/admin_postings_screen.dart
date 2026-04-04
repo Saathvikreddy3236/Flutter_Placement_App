@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../models/api_models.dart';
 import '../../services/api_service.dart';
+import '../../utils/app_notifier.dart';
+import '../../utils/formatters.dart';
 import '../../widgets/admin_navbar.dart';
 import '../../widgets/admin_section_shell.dart';
 
@@ -97,9 +99,15 @@ class _AdminPostingsScreenState extends State<AdminPostingsScreen> {
       _descriptionController.clear();
       _packageController.clear();
       _deadlineController.clear();
-      _showMessage('Job added successfully');
+      await AppNotifier.showSuccessMessage(
+        'Job Posting Added',
+        'The job has been published successfully.',
+      );
     } catch (e) {
-      _showMessage(e.toString().replaceFirst('Exception: ', ''));
+      await AppNotifier.showErrorMessage(
+        'Unable To Add Job',
+        e.toString().replaceFirst('Exception: ', ''),
+      );
     } finally {
       if (mounted) {
         setState(() => _submitting = false);
@@ -133,23 +141,21 @@ class _AdminPostingsScreenState extends State<AdminPostingsScreen> {
       final String message = await _api.deleteAdminJob(job.id);
       if (!mounted) return;
       setState(() {
-        _jobs = _jobs.where((item) => item.id != job.id).toList(growable: false);
+        _jobs = _jobs
+            .where((item) => item.id != job.id)
+            .toList(growable: false);
       });
-      _showMessage(message);
+      await AppNotifier.showInfoMessage('Job Deleted', message);
     } catch (e) {
-      _showMessage(e.toString().replaceFirst('Exception: ', ''));
+      await AppNotifier.showErrorMessage(
+        'Delete Failed',
+        e.toString().replaceFirst('Exception: ', ''),
+      );
     } finally {
       if (mounted) {
         setState(() => _deletingJobIds.remove(job.id));
       }
     }
-  }
-
-  void _showMessage(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
-    );
   }
 
   @override
@@ -176,13 +182,17 @@ class _AdminPostingsScreenState extends State<AdminPostingsScreen> {
           const SizedBox(height: 14),
           Align(
             alignment: Alignment.centerLeft,
-            child: Text('All Jobs', style: Theme.of(context).textTheme.titleLarge),
+            child: Text(
+              'All Jobs',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
           ),
           const SizedBox(height: 10),
           FutureBuilder<List<JobItem>>(
             future: _jobsFuture,
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting && _jobs.isEmpty) {
+              if (snapshot.connectionState == ConnectionState.waiting &&
+                  _jobs.isEmpty) {
                 return const Padding(
                   padding: EdgeInsets.all(20),
                   child: CircularProgressIndicator(),
@@ -194,7 +204,10 @@ class _AdminPostingsScreenState extends State<AdminPostingsScreen> {
                   children: [
                     Text('Failed to load jobs: ${snapshot.error}'),
                     const SizedBox(height: 8),
-                    OutlinedButton(onPressed: _refresh, child: const Text('Retry')),
+                    OutlinedButton(
+                      onPressed: _refresh,
+                      child: const Text('Retry'),
+                    ),
                   ],
                 );
               }
@@ -272,14 +285,20 @@ class _PostJobForm extends StatelessWidget {
                     color: const Color(0xFFFFF0E1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.work_outline, color: Color(0xFFC75A00)),
+                  child: const Icon(
+                    Icons.work_outline,
+                    color: Color(0xFFC75A00),
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Add New Job', style: Theme.of(context).textTheme.titleLarge),
+                      Text(
+                        'Add New Job',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
                       const SizedBox(height: 4),
                       Text(
                         'Fill in the job details clearly so students get a clean posting experience.',
@@ -308,7 +327,8 @@ class _PostJobForm extends StatelessWidget {
                                   hintText: 'Software Engineer',
                                   prefixIcon: Icon(Icons.badge_outlined),
                                 ),
-                                validator: (value) => value == null || value.trim().isEmpty
+                                validator: (value) =>
+                                    value == null || value.trim().isEmpty
                                     ? 'Enter job title'
                                     : null,
                               ),
@@ -324,7 +344,8 @@ class _PostJobForm extends StatelessWidget {
                                   hintText: 'Google',
                                   prefixIcon: Icon(Icons.apartment_outlined),
                                 ),
-                                validator: (value) => value == null || value.trim().isEmpty
+                                validator: (value) =>
+                                    value == null || value.trim().isEmpty
                                     ? 'Enter company'
                                     : null,
                               ),
@@ -344,7 +365,8 @@ class _PostJobForm extends StatelessWidget {
                                   hintText: 'Bengaluru',
                                   prefixIcon: Icon(Icons.location_on_outlined),
                                 ),
-                                validator: (value) => value == null || value.trim().isEmpty
+                                validator: (value) =>
+                                    value == null || value.trim().isEmpty
                                     ? 'Enter location'
                                     : null,
                               ),
@@ -362,8 +384,12 @@ class _PostJobForm extends StatelessWidget {
                                   prefixIcon: Icon(Icons.payments_outlined),
                                 ),
                                 validator: (value) {
-                                  final int? parsed = int.tryParse((value ?? '').trim());
-                                  if (parsed == null) return 'Enter valid package';
+                                  final int? parsed = int.tryParse(
+                                    (value ?? '').trim(),
+                                  );
+                                  if (parsed == null) {
+                                    return 'Enter valid package';
+                                  }
                                   return null;
                                 },
                               ),
@@ -384,7 +410,8 @@ class _PostJobForm extends StatelessWidget {
                           hintText: 'Software Engineer',
                           prefixIcon: Icon(Icons.badge_outlined),
                         ),
-                        validator: (value) => value == null || value.trim().isEmpty
+                        validator: (value) =>
+                            value == null || value.trim().isEmpty
                             ? 'Enter job title'
                             : null,
                       ),
@@ -398,7 +425,8 @@ class _PostJobForm extends StatelessWidget {
                           hintText: 'Google',
                           prefixIcon: Icon(Icons.apartment_outlined),
                         ),
-                        validator: (value) => value == null || value.trim().isEmpty
+                        validator: (value) =>
+                            value == null || value.trim().isEmpty
                             ? 'Enter company'
                             : null,
                       ),
@@ -412,7 +440,8 @@ class _PostJobForm extends StatelessWidget {
                           hintText: 'Bengaluru',
                           prefixIcon: Icon(Icons.location_on_outlined),
                         ),
-                        validator: (value) => value == null || value.trim().isEmpty
+                        validator: (value) =>
+                            value == null || value.trim().isEmpty
                             ? 'Enter location'
                             : null,
                       ),
@@ -428,7 +457,9 @@ class _PostJobForm extends StatelessWidget {
                           prefixIcon: Icon(Icons.payments_outlined),
                         ),
                         validator: (value) {
-                          final int? parsed = int.tryParse((value ?? '').trim());
+                          final int? parsed = int.tryParse(
+                            (value ?? '').trim(),
+                          );
                           if (parsed == null) return 'Enter valid package';
                           return null;
                         },
@@ -540,7 +571,11 @@ class _JobCard extends StatelessWidget {
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 6),
-                    Text(job.description, maxLines: 2, overflow: TextOverflow.ellipsis),
+                    Text(
+                      job.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
                 ),
               ),
@@ -558,8 +593,14 @@ class _JobCard extends StatelessWidget {
             runSpacing: 8,
             children: [
               _JobMeta(label: job.location, icon: Icons.location_on_outlined),
-              _JobMeta(label: '${job.packageLpa} LPA', icon: Icons.payments_outlined),
-              _JobMeta(label: 'Deadline ${job.deadline}', icon: Icons.calendar_today_outlined),
+              _JobMeta(
+                label: '${job.packageLpa} LPA',
+                icon: Icons.payments_outlined,
+              ),
+              _JobMeta(
+                label: 'Deadline ${AppFormatters.date(job.deadline)}',
+                icon: Icons.calendar_today_outlined,
+              ),
             ],
           ),
         ],

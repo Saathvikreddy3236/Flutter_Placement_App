@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/session_store.dart';
+import '../utils/app_notifier.dart';
 import 'admin/admin_dashboard_screen.dart';
 import '../services/api_service.dart';
 import 'student/student_dashboard_screen.dart';
@@ -50,10 +51,12 @@ class _LoginScreenState extends State<LoginScreen> {
           ? 'admin'
           : 'student';
       if (response.role != selectedRole) {
+        final String mismatchMessage = selectedRole == 'admin'
+            ? 'This account is not an admin account.'
+            : 'This account is not a student account.';
+        await AppNotifier.showErrorMessage('Role mismatch', mismatchMessage);
         setState(() {
-          _errorMessage = selectedRole == 'admin'
-              ? 'This account is not an admin account.'
-              : 'This account is not a student account.';
+          _errorMessage = mismatchMessage;
         });
         return;
       }
@@ -63,6 +66,11 @@ class _LoginScreenState extends State<LoginScreen> {
         role: response.role,
         usernameValue: response.username,
         emailValue: response.email,
+      );
+      if (!mounted) return;
+      await AppNotifier.showSuccessMessage(
+        'Login Successful',
+        'Welcome ${response.fullName}. Your session has been started successfully.',
       );
       if (!mounted) return;
       if (response.role == 'admin') {
@@ -79,9 +87,13 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString().replaceFirst('Exception: ', '');
-      });
+      final String message = e.toString().replaceFirst('Exception: ', '');
+      await AppNotifier.showErrorMessage('Login failed', message);
+      if (mounted) {
+        setState(() {
+          _errorMessage = message;
+        });
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -96,13 +108,17 @@ class _LoginScreenState extends State<LoginScreen> {
     final TextTheme textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Portal Login')),
+      appBar: AppBar(title: const Text('Placement Portal Login')),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFFFF1E2), Color(0xFFFFFAF4)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
+              const Color(0xFFFFFFFF),
+              const Color(0xFFF0F4F9),
+            ],
           ),
         ),
         child: SafeArea(
@@ -125,25 +141,28 @@ class _LoginScreenState extends State<LoginScreen> {
                               vertical: 7,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFFE7D1),
+                              color: const Color(0xFFEAF1F8),
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Text(
-                              'NIT AP Placement Cell',
+                              'NIT Andhra Pradesh Placement Cell',
                               textAlign: TextAlign.center,
                               style: textTheme.labelLarge?.copyWith(
-                                color: const Color(0xFF8C3900),
+                                color: Theme.of(context).colorScheme.primary,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
                           ),
                           const SizedBox(height: 16),
-                          Text('Welcome Back', style: textTheme.headlineSmall),
+                          Text(
+                            'Sign In To Continue',
+                            style: textTheme.headlineSmall,
+                          ),
                           const SizedBox(height: 6),
                           Text(
                             _selectedRole == _LoginRole.admin
-                                ? 'Admin sign in with your username and password.'
-                                : 'Student sign in with your username and password.',
+                                ? 'Administrator access for placement operations and applicant review.'
+                                : 'Student access for job applications, bookmarks, and offer updates.',
                             style: textTheme.bodyMedium,
                           ),
                           const SizedBox(height: 20),
@@ -160,8 +179,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           TextFormField(
                             controller: _emailController,
                             keyboardType: TextInputType.text,
+                            textInputAction: TextInputAction.next,
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
                             decoration: const InputDecoration(
                               labelText: 'Username',
+                              hintText: 'Enter your username',
                             ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
@@ -174,14 +197,23 @@ class _LoginScreenState extends State<LoginScreen> {
                           TextFormField(
                             controller: _passwordController,
                             obscureText: true,
+                            textInputAction: TextInputAction.done,
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
                             decoration: const InputDecoration(
                               labelText: 'Password',
+                              hintText: 'Enter your password',
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Enter your password';
                               }
                               return null;
+                            },
+                            onFieldSubmitted: (_) {
+                              if (!_isLoading) {
+                                _login();
+                              }
                             },
                           ),
                           const SizedBox(height: 18),
@@ -217,10 +249,7 @@ class _LoginScreenState extends State<LoginScreen> {
 }
 
 class _RoleToggle extends StatelessWidget {
-  const _RoleToggle({
-    required this.selectedRole,
-    required this.onChanged,
-  });
+  const _RoleToggle({required this.selectedRole, required this.onChanged});
 
   final _LoginRole selectedRole;
   final ValueChanged<_LoginRole> onChanged;
@@ -230,9 +259,9 @@ class _RoleToggle extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF4E8),
+        color: const Color(0xFFF7FAFD),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFFDFC2)),
+        border: Border.all(color: const Color(0xFFD6E2EE)),
       ),
       child: Row(
         children: [
@@ -276,10 +305,10 @@ class _RoleToggleButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: active ? const Color(0xFFC75A00) : const Color(0xFFFFFCF8),
+          color: active ? const Color(0xFF12355B) : const Color(0xFFFFFFFF),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: active ? const Color(0xFFC75A00) : const Color(0xFFFFE2CA),
+            color: active ? const Color(0xFF12355B) : const Color(0xFFD7E1EC),
           ),
         ),
         child: Text(
@@ -287,7 +316,7 @@ class _RoleToggleButton extends StatelessWidget {
           textAlign: TextAlign.center,
           style: TextStyle(
             fontWeight: FontWeight.w700,
-            color: active ? Colors.white : const Color(0xFF7B5538),
+            color: active ? Colors.white : const Color(0xFF435365),
           ),
         ),
       ),

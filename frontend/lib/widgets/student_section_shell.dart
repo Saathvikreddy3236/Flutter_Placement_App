@@ -30,9 +30,9 @@ class StudentSectionShell extends StatelessWidget {
         body: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFFFFF4E7), Color(0xFFFFFCF8)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFF4F7FB), Color(0xFFFFFFFF), Color(0xFFEEF3F9)],
             ),
           ),
           child: SafeArea(
@@ -76,7 +76,14 @@ class StudentSectionShell extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFFFFE1CA)),
+                          border: Border.all(color: const Color(0xFFD9E3EF)),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x100D2340),
+                              blurRadius: 18,
+                              offset: Offset(0, 10),
+                            ),
+                          ],
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,

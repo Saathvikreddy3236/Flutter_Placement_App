@@ -10,14 +10,14 @@ class ApiService {
   const ApiService();
 
   static const String _apiBaseFromEnv = String.fromEnvironment('API_BASE_URL');
-  static const String _defaultLanBaseUrl = 'http://172.50.10.122:8000/api';
+  static const String _defaultAndroidEmulatorUrl = 'http://10.0.2.2:8000/api';
 
   static String get _baseUrl {
     final String envUrl = _normalizeBaseUrl(_apiBaseFromEnv);
     if (envUrl.isNotEmpty) return envUrl;
     if (kIsWeb) return 'http://127.0.0.1:8000/api';
     if (defaultTargetPlatform == TargetPlatform.android) {
-      return _defaultLanBaseUrl;
+      return _defaultAndroidEmulatorUrl;
     }
     return 'http://127.0.0.1:8000/api';
   }
@@ -25,11 +25,17 @@ class ApiService {
   static String _normalizeBaseUrl(String rawUrl) {
     final String trimmed = rawUrl.trim();
     if (trimmed.isEmpty) return '';
-    return trimmed.replaceAll(RegExp(r'\s+'), '');
+    String cleaned = trimmed.replaceAll(RegExp(r'\s+'), '');
+    if (cleaned.endsWith('/')) {
+      cleaned = cleaned.substring(0, cleaned.length - 1);
+    }
+    return cleaned;
   }
 
   Uri _uri(String path, [Map<String, String>? queryParameters]) {
-    return Uri.parse('$_baseUrl/$path').replace(queryParameters: queryParameters);
+    return Uri.parse(
+      '$_baseUrl/$path',
+    ).replace(queryParameters: queryParameters);
   }
 
   Future<LoginResponse> login({
@@ -80,7 +86,9 @@ class ApiService {
   }
 
   Future<List<JobItem>> fetchJobsForStudent(int studentId) async {
-    final response = await http.get(_uri('jobs/', {'student_id': '$studentId'}));
+    final response = await http.get(
+      _uri('jobs/', {'student_id': '$studentId'}),
+    );
     final List<dynamic> data = _decodeJsonArray(response);
     return data
         .whereType<Map<String, dynamic>>()
@@ -88,10 +96,7 @@ class ApiService {
         .toList(growable: false);
   }
 
-  Future<String> applyJob({
-    required int studentId,
-    required int jobId,
-  }) async {
+  Future<String> applyJob({required int studentId, required int jobId}) async {
     final response = await http.post(
       _uri('apply/'),
       headers: {'Content-Type': 'application/json'},
@@ -334,14 +339,28 @@ class ApiService {
   }
 
   Map<String, dynamic> _decodeJsonObject(http.Response response) {
-    final dynamic decoded = jsonDecode(response.body);
-    if (decoded is Map<String, dynamic>) return decoded;
-    return <String, dynamic>{};
+    if (response.body.trim().isEmpty) return <String, dynamic>{};
+    try {
+      final dynamic decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic>) return decoded;
+      return <String, dynamic>{};
+    } on FormatException {
+      throw Exception(
+        'Unexpected server response format. Please verify the backend output.',
+      );
+    }
   }
 
   List<dynamic> _decodeJsonArray(http.Response response) {
-    final dynamic decoded = jsonDecode(response.body);
-    if (decoded is List<dynamic>) return decoded;
-    return <dynamic>[];
+    if (response.body.trim().isEmpty) return <dynamic>[];
+    try {
+      final dynamic decoded = jsonDecode(response.body);
+      if (decoded is List<dynamic>) return decoded;
+      return <dynamic>[];
+    } on FormatException {
+      throw Exception(
+        'Unexpected server response format. Please verify the backend output.',
+      );
+    }
   }
 }

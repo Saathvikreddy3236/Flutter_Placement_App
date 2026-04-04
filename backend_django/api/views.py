@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate
 from django.db.models import Avg, Count, Max, Q
+from django.utils import timezone
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -53,6 +54,10 @@ def _resolve_student_profile_optional(request):
 
 def _has_accepted_offer(student_profile):
     return Application.objects.filter(student=student_profile, status='Accepted').exists()
+
+
+def _active_jobs_queryset():
+    return Job.objects.filter(deadline__gte=timezone.localdate()).order_by('-created_at')
 
 
 @api_view(['GET', 'PATCH'])
@@ -187,6 +192,7 @@ def login_student(request):
 
 @api_view(['GET'])
 def landing_summary(request):
+    active_jobs = _active_jobs_queryset()
     total_students_placed = Application.objects.filter(status='Accepted').values(
         'student'
     ).distinct().count()
@@ -205,8 +211,8 @@ def landing_summary(request):
     return Response(
         {
             'hero': {
-                'upcoming_drives': Job.objects.count(),
-                'active_roles': Job.objects.count(),
+                'upcoming_drives': active_jobs.count(),
+                'active_roles': active_jobs.count(),
                 'interview_slots': Application.objects.filter(status='Selected').count(),
                 'offer_calls': Application.objects.filter(
                     status__in=['Offered', 'Accepted']
@@ -230,7 +236,7 @@ def landing_summary(request):
 @api_view(['GET'])
 def get_jobs(request):
     student_profile = _resolve_student_profile_optional(request)
-    jobs = Job.objects.all().order_by('-created_at')
+    jobs = _active_jobs_queryset()
     serializer = JobSerializer(
         jobs,
         many=True,
@@ -259,6 +265,9 @@ def apply_job(request):
         job = Job.objects.get(id=job_id)
     except Job.DoesNotExist:
         return Response({"error": "Job not found"}, status=404)
+
+    if job.deadline < timezone.localdate():
+        return Response({"error": "This job is closed and can no longer be applied to."}, status=400)
 
     application, created = Application.objects.get_or_create(
         student=student_profile,
@@ -330,8 +339,8 @@ def student_dashboard(request):
     bookmarks = Bookmark.objects.filter(student=student_profile).select_related("job")
     applied_job_ids = applications.values_list("job_id", flat=True)
     accepted_application = applications.filter(status="Accepted").order_by("-applied_at").first()
-
-    latest_jobs = Job.objects.exclude(id__in=applied_job_ids).order_by("-created_at")[:3]
+    active_jobs = _active_jobs_queryset()
+    latest_jobs = active_jobs.exclude(id__in=applied_job_ids)[:3]
 
     return Response(
         {
@@ -343,7 +352,7 @@ def student_dashboard(request):
                     status__in=["Selected", "Offered", "Accepted"]
                 ).count(),
                 "pending_reviews": applications.filter(status="Pending").count(),
-                "available_jobs": Job.objects.count(),
+                "available_jobs": active_jobs.count(),
             },
             "recent_applications": ApplicationSerializer(
                 applications.order_by("-applied_at")[:4],
@@ -368,12 +377,13 @@ def student_dashboard(request):
 @api_view(['GET'])
 def admin_dashboard(request):
     jobs = Job.objects.all()
+    active_jobs = _active_jobs_queryset()
     applications = Application.objects.select_related("job", "student", "student__user")
 
     return Response(
         {
             "stats": {
-                "active_job_posts": jobs.count(),
+                "active_job_posts": active_jobs.count(),
                 "total_applicants": applications.count(),
                 "offered_students": applications.filter(
                     status__in=["Offered", "Accepted"]
@@ -467,8 +477,26 @@ def admin_application_detail(request, application_id):
             status=400,
         )
 
+    if (
+        status_value == 'Accepted'
+        and Application.objects.filter(
+            student=application.student,
+            status='Accepted',
+        ).exclude(id=application.id).exists()
+    ):
+        return Response(
+            {'error': 'This student has already accepted another offer.'},
+            status=400,
+        )
+
     application.status = status_value
     application.save(update_fields=['status'])
+
+    if status_value == 'Accepted':
+        Application.objects.filter(
+            student=application.student,
+        ).exclude(id=application.id).exclude(status='Accepted').update(status='Rejected')
+
     return Response(AdminApplicationSerializer(application).data)
 
 
