@@ -26,16 +26,35 @@ class ApiService {
     final String trimmed = rawUrl.trim();
     if (trimmed.isEmpty) return '';
     String cleaned = trimmed.replaceAll(RegExp(r'\s+'), '');
+    cleaned = cleaned.replaceFirstMapped(
+      RegExp(r'^http:/([^/])'),
+      (Match match) => 'http://${match.group(1)}',
+    );
+    cleaned = cleaned.replaceFirstMapped(
+      RegExp(r'^https:/([^/])'),
+      (Match match) => 'https://${match.group(1)}',
+    );
     if (cleaned.endsWith('/')) {
       cleaned = cleaned.substring(0, cleaned.length - 1);
     }
-    return cleaned;
+
+    final Uri? parsed = Uri.tryParse(cleaned);
+    if (parsed == null ||
+        parsed.scheme.isEmpty ||
+        parsed.host.isEmpty ||
+        (parsed.scheme != 'http' && parsed.scheme != 'https')) {
+      throw Exception(
+        'Invalid API_BASE_URL: "$rawUrl". Example: http://10.118.79.153:8000/api',
+      );
+    }
+
+    return parsed.toString().endsWith('/')
+        ? parsed.toString().substring(0, parsed.toString().length - 1)
+        : parsed.toString();
   }
 
   Uri _uri(String path, [Map<String, String>? queryParameters]) {
-    return Uri.parse(
-      '$_baseUrl/$path',
-    ).replace(queryParameters: queryParameters);
+    return Uri.parse('$_baseUrl/$path').replace(queryParameters: queryParameters);
   }
 
   Future<LoginResponse> login({
@@ -57,7 +76,7 @@ class ApiService {
       );
     } on http.ClientException catch (e) {
       throw Exception(
-        'Network error: ${e.message}. Check API_BASE_URL and backend server status.',
+        'Network error: ${e.message}. Verify API_BASE_URL, confirm the Django server is running, and ensure this device can reach the backend IP and port.',
       );
     }
     final Map<String, dynamic> data = _decodeJsonObject(response);

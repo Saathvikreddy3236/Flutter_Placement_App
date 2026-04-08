@@ -38,6 +38,7 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
       title: 'Companies',
       subtitle:
           'See all companies that have come to campus and how many jobs and applications each company has.',
+      onProfileUpdated: _refresh,
       child: FutureBuilder<List<CompanySummaryItem>>(
         future: _companiesFuture,
         builder: (context, snapshot) {

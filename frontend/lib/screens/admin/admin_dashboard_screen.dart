@@ -90,7 +90,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               children: [
                 AdminNavbar(
                   adminName: SessionStore.studentName,
-                  onProfileTap: () => showProfileDialog(context),
+                  onProfileTap: () async {
+                    final bool updated = await showProfileDialog(context);
+                    if (!mounted || !updated) return;
+                    await _refresh();
+                  },
                   onLogout: () {
                     SessionStore.clear();
                     Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);

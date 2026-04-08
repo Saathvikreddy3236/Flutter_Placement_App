@@ -154,6 +154,7 @@ class _StudentJobsScreenState extends State<StudentJobsScreen> {
       title: 'All Jobs',
       subtitle:
           'Discover roles tailored to your profile and save the ones you want to revisit.',
+      onProfileUpdated: _refresh,
       child: FutureBuilder<List<JobItem>>(
         future: _jobsFuture,
         builder: (context, snapshot) {

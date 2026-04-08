@@ -86,6 +86,7 @@ class _StudentApplicationsScreenState extends State<StudentApplicationsScreen> {
       title: 'My Applications',
       subtitle:
           'Track all roles you applied for. If an offer arrives, you can accept or reject it here.',
+      onProfileUpdated: _refresh,
       child: FutureBuilder<List<ApplicationItem>>(
         future: _applicationsFuture,
         builder: (context, snapshot) {

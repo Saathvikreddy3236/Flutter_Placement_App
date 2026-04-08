@@ -5,11 +5,12 @@ import '../services/api_service.dart';
 import '../services/session_store.dart';
 import '../utils/app_notifier.dart';
 
-Future<void> showProfileDialog(BuildContext context) async {
-  await showDialog<void>(
+Future<bool> showProfileDialog(BuildContext context) async {
+  final bool? updated = await showDialog<bool>(
     context: context,
     builder: (context) => const _ProfileDialog(),
   );
+  return updated ?? false;
 }
 
 class _ProfileDialog extends StatefulWidget {
@@ -104,7 +105,7 @@ class _ProfileDialogState extends State<_ProfileDialog> {
       if (!mounted) {
         return;
       }
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) {
         return;

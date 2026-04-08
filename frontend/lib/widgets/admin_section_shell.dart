@@ -6,19 +6,33 @@ import 'admin_navbar.dart';
 import 'logout_back_guard.dart';
 import 'profile_dialog.dart';
 
-class AdminSectionShell extends StatelessWidget {
+class AdminSectionShell extends StatefulWidget {
   const AdminSectionShell({
     super.key,
     required this.activeTab,
     required this.title,
     required this.subtitle,
     required this.child,
+    this.onProfileUpdated,
   });
 
   final AdminNavTab activeTab;
   final String title;
   final String subtitle;
   final Widget child;
+  final Future<void> Function()? onProfileUpdated;
+
+  @override
+  State<AdminSectionShell> createState() => _AdminSectionShellState();
+}
+
+class _AdminSectionShellState extends State<AdminSectionShell> {
+  Future<void> _handleProfileTap() async {
+    final bool updated = await showProfileDialog(context);
+    if (!mounted || !updated) return;
+    setState(() {});
+    await widget.onProfileUpdated?.call();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,12 +54,12 @@ class AdminSectionShell extends StatelessWidget {
               children: [
                 AdminNavbar(
                   adminName: SessionStore.studentName,
-                  onProfileTap: () => showProfileDialog(context),
+                  onProfileTap: _handleProfileTap,
                   onLogout: () {
                     SessionStore.clear();
                     Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                   },
-                  activeTab: activeTab,
+                  activeTab: widget.activeTab,
                   onDashboardTap: () => Navigator.pushReplacementNamed(
                     context,
                     AdminDashboardScreen.routeName,
@@ -78,19 +92,19 @@ class AdminSectionShell extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              title,
+                              widget.title,
                               style: Theme.of(context).textTheme.headlineSmall,
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              subtitle,
+                              widget.subtitle,
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 12),
-                      child,
+                      widget.child,
                     ],
                   ),
                 ),

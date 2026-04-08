@@ -73,6 +73,7 @@ class _AdminApplicantsScreenState extends State<AdminApplicantsScreen> {
       title: 'View Applicants',
       subtitle:
           'Search applicants by student name or company, open their profile, and update the result status.',
+      onProfileUpdated: _search,
       child: Column(
         children: [
           Row(

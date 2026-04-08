@@ -61,7 +61,11 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
               children: [
                 StudentNavbar(
                   studentName: SessionStore.studentName,
-                  onProfileTap: () => showProfileDialog(context),
+                  onProfileTap: () async {
+                    final bool updated = await showProfileDialog(context);
+                    if (!mounted || !updated) return;
+                    await _refresh();
+                  },
                   onLogout: () {
                     SessionStore.clear();
                     Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
@@ -400,7 +404,9 @@ class _ProfileCard extends StatelessWidget {
             runSpacing: 8,
             children: [
               _MetaPill('CGPA ${profile.cgpa.toStringAsFixed(1)}'),
-              _MetaPill('Grad ${profile.graduationYear}'),
+              _MetaPill(
+                'Grad ${profile.graduationYear == 0 ? profile.year : profile.graduationYear}',
+              ),
               _MetaPill('${stats.availableJobs} open roles'),
             ],
           ),

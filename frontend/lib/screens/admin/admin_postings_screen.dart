@@ -165,6 +165,7 @@ class _AdminPostingsScreenState extends State<AdminPostingsScreen> {
       title: 'My Postings',
       subtitle:
           'Add polished job postings, pick the deadline from a calendar, and manage all posted jobs below.',
+      onProfileUpdated: _refresh,
       child: Column(
         children: [
           _PostJobForm(

@@ -47,6 +47,7 @@ class _StudentBookmarksScreenState extends State<StudentBookmarksScreen> {
       activeTab: StudentNavTab.bookmarks,
       title: 'My Bookmarks',
       subtitle: 'Saved opportunities so you can compare and apply at the right time.',
+      onProfileUpdated: _refresh,
       child: FutureBuilder<List<BookmarkItem>>(
         future: _bookmarksFuture,
         builder: (context, snapshot) {
