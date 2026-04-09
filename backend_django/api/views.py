@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate
+from django.contrib.auth.models import User
 from django.db.models import Avg, Count, Max, Q
 from django.utils import timezone
 from rest_framework.decorators import api_view
@@ -13,6 +14,27 @@ from .serializers import (
     JobSerializer,
     StudentProfileSerializer,
 )
+
+STUDENT_EMAIL_DOMAIN = '@student.nitandhra.ac.in'
+
+
+def _is_valid_student_email(email):
+    return email.lower().endswith(STUDENT_EMAIL_DOMAIN)
+
+
+def _build_auth_payload(user, student_profile=None):
+    payload = {
+        "username": user.username,
+        "full_name": user.get_full_name() or user.username,
+        "email": user.email,
+    }
+    if user.is_staff or user.is_superuser:
+        payload["role"] = "admin"
+        return payload
+
+    payload["role"] = "student"
+    payload["student_id"] = student_profile.id if student_profile else None
+    return payload
 
 
 def _resolve_student_profile(request):
@@ -92,11 +114,25 @@ def user_profile(request):
 
         new_name = (request.data.get('name') or user.get_full_name() or user.username).strip()
         new_email = (request.data.get('email') or '').strip()
+        current_password = request.data.get('current_password') or ''
+        new_password = request.data.get('new_password') or ''
 
         name_parts = new_name.split(maxsplit=1)
         user.first_name = name_parts[0] if name_parts else ''
         user.last_name = name_parts[1] if len(name_parts) > 1 else ''
         user.email = new_email
+        if new_password:
+            if not current_password or not user.check_password(current_password):
+                return Response(
+                    {'error': 'Current password is incorrect'},
+                    status=400,
+                )
+            if len(new_password) < 6:
+                return Response(
+                    {'error': 'New password must be at least 6 characters long'},
+                    status=400,
+                )
+            user.set_password(new_password)
         user.save()
 
         return Response(
@@ -125,6 +161,14 @@ def user_profile(request):
     new_branch = (request.data.get('branch') or '').strip()
     new_cgpa = request.data.get('cgpa')
     new_year = request.data.get('year')
+    current_password = request.data.get('current_password') or ''
+    new_password = request.data.get('new_password') or ''
+
+    if not _is_valid_student_email(new_email):
+        return Response(
+            {'error': f'Email must use the {STUDENT_EMAIL_DOMAIN} domain'},
+            status=400,
+        )
 
     if new_cgpa in (None, '') or new_year in (None, ''):
         return Response({'error': 'cgpa and year are required'}, status=400)
@@ -143,6 +187,18 @@ def user_profile(request):
     user.first_name = name_parts[0] if name_parts else ''
     user.last_name = name_parts[1] if len(name_parts) > 1 else ''
     user.email = new_email
+    if new_password:
+        if not current_password or not user.check_password(current_password):
+            return Response(
+                {'error': 'Current password is incorrect'},
+                status=400,
+            )
+        if len(new_password) < 6:
+            return Response(
+                {'error': 'New password must be at least 6 characters long'},
+                status=400,
+            )
+        user.set_password(new_password)
     user.save()
 
     data = StudentProfileSerializer(student_profile).data
@@ -165,29 +221,78 @@ def login_student(request):
         return Response({"error": "Invalid credentials"}, status=401)
 
     if user.is_staff or user.is_superuser:
-        return Response(
-            {
-                "role": "admin",
-                "username": user.username,
-                "full_name": user.get_full_name() or user.username,
-                "email": user.email,
-            }
-        )
+        return Response(_build_auth_payload(user))
 
     try:
         student_profile = StudentProfile.objects.select_related("user").get(user=user)
     except StudentProfile.DoesNotExist:
         return Response({"error": "Student profile not found"}, status=404)
 
-    return Response(
-        {
-            "role": "student",
-            "student_id": student_profile.id,
-            "username": user.username,
-            "full_name": user.get_full_name() or user.username,
-            "email": user.email,
-        }
+    return Response(_build_auth_payload(user, student_profile))
+
+
+@api_view(['POST'])
+def register_student(request):
+    username = (request.data.get('username') or '').strip()
+    name = (request.data.get('name') or '').strip()
+    email = (request.data.get('email') or '').strip().lower()
+    phone = (request.data.get('phone') or '').strip()
+    branch = (request.data.get('branch') or '').strip()
+    password = request.data.get('password') or ''
+    cgpa = request.data.get('cgpa')
+    year = request.data.get('year')
+
+    if not all([username, name, email, phone, branch, password]):
+        return Response({'error': 'All registration fields are required'}, status=400)
+
+    if not _is_valid_student_email(email):
+        return Response(
+            {'error': f'Email must use the {STUDENT_EMAIL_DOMAIN} domain'},
+            status=400,
+        )
+
+    if User.objects.filter(username=username).exists():
+        return Response({'error': 'Username already exists'}, status=400)
+
+    if User.objects.filter(email__iexact=email).exists():
+        return Response({'error': 'Email already registered'}, status=400)
+
+    if len(password) < 6:
+        return Response(
+            {'error': 'Password must be at least 6 characters long'},
+            status=400,
+        )
+
+    try:
+        cgpa_value = float(cgpa)
+    except (TypeError, ValueError):
+        return Response({'error': 'Enter a valid CGPA'}, status=400)
+    if cgpa_value < 0 or cgpa_value > 10:
+        return Response({'error': 'CGPA must be between 0 and 10'}, status=400)
+
+    try:
+        year_value = int(year)
+    except (TypeError, ValueError):
+        return Response({'error': 'Enter a valid graduation year'}, status=400)
+
+    name_parts = name.split(maxsplit=1)
+    user = User.objects.create(
+        username=username,
+        first_name=name_parts[0] if name_parts else '',
+        last_name=name_parts[1] if len(name_parts) > 1 else '',
+        email=email,
     )
+    user.set_password(password)
+    user.save()
+
+    student_profile = StudentProfile.objects.create(
+        user=user,
+        phone=phone,
+        branch=branch,
+        cgpa=cgpa_value,
+        year=year_value,
+    )
+    return Response(_build_auth_payload(user, student_profile), status=201)
 
 
 @api_view(['GET'])

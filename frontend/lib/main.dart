@@ -6,6 +6,7 @@ import 'screens/admin/admin_dashboard_screen.dart';
 import 'screens/admin/admin_postings_screen.dart';
 import 'screens/landing_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/registration_screen.dart';
 import 'screens/student/student_applications_screen.dart';
 import 'screens/student/student_bookmarks_screen.dart';
 import 'screens/student/student_dashboard_screen.dart';
@@ -36,6 +37,7 @@ class PlacementPortalApp extends StatelessWidget {
       routes: <String, WidgetBuilder>{
         LandingScreen.routeName: (_) => const LandingScreen(),
         LoginScreen.routeName: (_) => const LoginScreen(),
+        RegistrationScreen.routeName: (_) => const RegistrationScreen(),
         StudentDashboardScreen.routeName: (_) => const StudentDashboardScreen(),
         StudentJobsScreen.routeName: (_) => const StudentJobsScreen(),
         StudentApplicationsScreen.routeName: (_) =>

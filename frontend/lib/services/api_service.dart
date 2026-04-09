@@ -86,6 +86,37 @@ class ApiService {
     return LoginResponse.fromJson(data);
   }
 
+  Future<LoginResponse> registerStudent({
+    required String username,
+    required String name,
+    required String email,
+    required String phone,
+    required String branch,
+    required double cgpa,
+    required int year,
+    required String password,
+  }) async {
+    final response = await http.post(
+      _uri('register/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'username': username,
+        'name': name,
+        'email': email,
+        'phone': phone,
+        'branch': branch,
+        'cgpa': cgpa,
+        'year': year,
+        'password': password,
+      }),
+    );
+    final Map<String, dynamic> data = _decodeJsonObject(response);
+    if (response.statusCode != 201) {
+      throw Exception(data['error'] ?? 'Registration failed');
+    }
+    return LoginResponse.fromJson(data);
+  }
+
   Future<LandingSummaryData> fetchLandingSummary() async {
     final response = await http.get(_uri('landing-summary/'));
     final Map<String, dynamic> data = _decodeJsonObject(response);
@@ -225,11 +256,15 @@ class ApiService {
     String branch = '',
     double? cgpa,
     int? year,
+    String currentPassword = '',
+    String newPassword = '',
   }) async {
     final Map<String, dynamic> body = <String, dynamic>{
       'role': role,
       'name': name,
       'email': email,
+      'current_password': currentPassword,
+      'new_password': newPassword,
     };
     if (role == 'student') {
       body['student_id'] = studentId;

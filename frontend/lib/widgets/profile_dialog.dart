@@ -28,6 +28,11 @@ class _ProfileDialogState extends State<_ProfileDialog> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _branchController = TextEditingController();
   final TextEditingController _cgpaController = TextEditingController();
+  final TextEditingController _currentPasswordController =
+      TextEditingController();
+  final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _confirmNewPasswordController =
+      TextEditingController();
   int? _selectedGraduationYear;
 
   late Future<UserProfileItem> _profileFuture;
@@ -50,6 +55,9 @@ class _ProfileDialogState extends State<_ProfileDialog> {
     _phoneController.dispose();
     _branchController.dispose();
     _cgpaController.dispose();
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
+    _confirmNewPasswordController.dispose();
     super.dispose();
   }
 
@@ -89,6 +97,8 @@ class _ProfileDialogState extends State<_ProfileDialog> {
         branch: _branchController.text.trim(),
         cgpa: double.tryParse(_cgpaController.text.trim()),
         year: _selectedGraduationYear,
+        currentPassword: _currentPasswordController.text,
+        newPassword: _newPasswordController.text,
       );
       SessionStore.updateProfile(
         name: updated.name.isEmpty ? updated.username : updated.name,
@@ -189,6 +199,12 @@ class _ProfileDialogState extends State<_ProfileDialog> {
                           if (!trimmed.contains('@')) {
                             return 'Enter valid email';
                           }
+                          if (profile.isStudent &&
+                              !trimmed.toLowerCase().endsWith(
+                                '@student.nitandhra.ac.in',
+                              )) {
+                            return 'Email must be @student.nitandhra.ac.in';
+                          }
                           return null;
                         },
                       ),
@@ -265,6 +281,61 @@ class _ProfileDialogState extends State<_ProfileDialog> {
                           },
                         ),
                       ],
+                      const SizedBox(height: 16),
+                      ExpansionTile(
+                        title: const Text('Change Password (Optional)'),
+                        children: [
+                          TextFormField(
+                            controller: _currentPasswordController,
+                            obscureText: true,
+                            decoration: const InputDecoration(
+                              labelText: 'Current Password',
+                              hintText: 'Enter your current password',
+                            ),
+                            validator: (value) {
+                              if (_newPasswordController.text.isNotEmpty &&
+                                  (value == null || value.isEmpty)) {
+                                return 'Enter current password to change password';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                          TextFormField(
+                            controller: _newPasswordController,
+                            obscureText: true,
+                            decoration: const InputDecoration(
+                              labelText: 'New Password',
+                              hintText: 'Enter new password',
+                            ),
+                            validator: (value) {
+                              if (value != null &&
+                                  value.isNotEmpty &&
+                                  value.length < 6) {
+                                return 'New password must be at least 6 characters';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                          TextFormField(
+                            controller: _confirmNewPasswordController,
+                            obscureText: true,
+                            decoration: const InputDecoration(
+                              labelText: 'Confirm New Password',
+                              hintText: 'Re-enter new password',
+                            ),
+                            validator: (value) {
+                              if (_newPasswordController.text.isNotEmpty &&
+                                  value != _newPasswordController.text) {
+                                return 'Passwords do not match';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                      ),
                       const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,

@@ -5,6 +5,7 @@ import '../utils/app_notifier.dart';
 import 'admin/admin_dashboard_screen.dart';
 import '../services/api_service.dart';
 import 'student/student_dashboard_screen.dart';
+import 'registration_screen.dart';
 
 enum _LoginRole { student, admin }
 
@@ -234,6 +235,22 @@ class _LoginScreenState extends State<LoginScreen> {
                                   : 'Login as Student',
                             ),
                           ),
+                          if (_selectedRole == _LoginRole.student) ...[
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text("Don't have an account?"),
+                                TextButton(
+                                  onPressed: () => Navigator.pushNamed(
+                                    context,
+                                    RegistrationScreen.routeName,
+                                  ),
+                                  child: const Text('Register'),
+                                ),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     ),
